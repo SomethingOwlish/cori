@@ -1,0 +1,24 @@
+/* App shell layout. Individual components own their own styling. */
+
+.app {
+  max-width: 78rem;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 4rem;
+  font-family: system-ui, -apple-system, sans-serif;
+  color: #e6e9ef;
+}
+
+.app__header {
+  margin-bottom: 1.5rem;
+}
+
+.app__title {
+  margin: 0;
+  font-size: 2rem;
+  letter-spacing: 0.02em;
+}
+
+.app__tagline {
+  margin: 0.2rem 0 0;
+  color: #7a8291;
+}
