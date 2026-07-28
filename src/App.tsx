@@ -14,6 +14,7 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
+import { Codex } from "./components/Codex";
 import { Login } from "./components/Login";
 import { MasterDashboard } from "./components/MasterDashboard";
 import { PlayerHome } from "./components/PlayerHome";
@@ -21,13 +22,16 @@ import {
   ensureSignedIn,
   FirestoreCampaignRepository,
   FirestoreCharacterRepository,
+  FirestoreCodexRepository,
   getFirestoreDb,
   LocalStorageCampaignRepository,
   LocalStorageCharacterRepository,
+  LocalStorageCodexRepository,
   readFirebaseConfigFromEnv,
   signInWithGoogle,
   type CampaignRepository,
   type CharacterRepository,
+  type CodexRepository,
 } from "./data";
 import { clearSession, loadSession, saveSession, type Session } from "./session";
 import "./App.css";
@@ -35,6 +39,7 @@ import "./App.css";
 interface Repositories {
   characters: CharacterRepository;
   campaigns: CampaignRepository;
+  codex: CodexRepository;
 }
 
 /** True when the `VITE_FIREBASE_*` env is fully configured for this build. */
@@ -60,6 +65,7 @@ function createRepositories(): Repositories {
     return {
       characters: new FirestoreCharacterRepository(db),
       campaigns: new FirestoreCampaignRepository(db),
+      codex: new FirestoreCodexRepository(db),
     };
   } catch (error) {
     console.warn(
@@ -70,13 +76,14 @@ function createRepositories(): Repositories {
     return {
       characters: new LocalStorageCharacterRepository(),
       campaigns: new LocalStorageCampaignRepository(),
+      codex: new LocalStorageCodexRepository(),
     };
   }
 }
 
 export function App() {
   // One repository instance each for the app's lifetime.
-  const { characters, campaigns } = useMemo(createRepositories, []);
+  const { characters, campaigns, codex } = useMemo(createRepositories, []);
   const firebaseEnabled = useMemo(isFirebaseConfigured, []);
 
   // Firestore's rules require an authenticated client. When Firebase is
@@ -101,6 +108,9 @@ export function App() {
   }, [firebaseEnabled]);
 
   const [session, setSession] = useState<Session | null>(() => loadSession());
+  // Two destinations once signed in: the role home (кампании) and the shared
+  // Codex. Both the GM and players can open the Codex.
+  const [page, setPage] = useState<"home" | "codex">("home");
 
   const handleSignIn = (next: Session) => {
     saveSession(next);
@@ -138,20 +148,43 @@ export function App() {
         <p className="app__loading">Подключение…</p>
       ) : !session ? (
         <Login onSignIn={handleSignIn} onGoogleSignIn={handleGoogleSignIn} />
-      ) : session.role === "gm" ? (
-        <MasterDashboard
-          session={session}
-          campaigns={campaigns}
-          characters={characters}
-          onSignOut={handleSignOut}
-        />
       ) : (
-        <PlayerHome
-          session={session}
-          campaigns={campaigns}
-          characters={characters}
-          onSignOut={handleSignOut}
-        />
+        <>
+          <nav className="app__nav" aria-label="Разделы">
+            <button
+              type="button"
+              className={`app__nav-link${page === "home" ? " app__nav-link--active" : ""}`}
+              onClick={() => setPage("home")}
+            >
+              {session.role === "gm" ? "Панель ведущего" : "Кампании"}
+            </button>
+            <button
+              type="button"
+              className={`app__nav-link${page === "codex" ? " app__nav-link--active" : ""}`}
+              onClick={() => setPage("codex")}
+            >
+              Кодекс
+            </button>
+          </nav>
+
+          {page === "codex" ? (
+            <Codex codex={codex} />
+          ) : session.role === "gm" ? (
+            <MasterDashboard
+              session={session}
+              campaigns={campaigns}
+              characters={characters}
+              onSignOut={handleSignOut}
+            />
+          ) : (
+            <PlayerHome
+              session={session}
+              campaigns={campaigns}
+              characters={characters}
+              onSignOut={handleSignOut}
+            />
+          )}
+        </>
       )}
     </main>
   );

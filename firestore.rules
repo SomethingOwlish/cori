@@ -19,5 +19,10 @@ service cloud.firestore {
     match /characters/{characterId} {
       allow read, write: if request.auth != null;
     }
+    // Кодекс — общий справочник: любой авторизованный участник может добавлять
+    // и править записи (встроенный каталог живёт в коде, здесь — только свои).
+    match /codex/{entryId} {
+      allow read, write: if request.auth != null;
+    }
   }
 }
