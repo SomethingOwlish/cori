@@ -37,21 +37,21 @@ export function Login({ onSignIn }: LoginProps) {
           submit();
         }}
       >
-        <h2 className="login__title">Welcome to Cori</h2>
-        <p className="login__sub">Enter the Third Horizon. Choose who you are.</p>
+        <h2 className="login__title">Добро пожаловать в Cori</h2>
+        <p className="login__sub">Войди в Третий Горизонт. Выбери, кто ты.</p>
 
         <label className="login__field">
-          <span>Your name</span>
+          <span>Твоё имя</span>
           <input
             autoFocus
             value={name}
-            placeholder="e.g. Zara al-Hariq"
+            placeholder="например, Зара аль-Харик"
             onChange={(e) => setName(e.target.value)}
           />
         </label>
 
         <fieldset className="login__roles">
-          <legend>I am a…</legend>
+          <legend>Я —</legend>
           <div className="login__role-options">
             <label className={`login__role${role === "gm" ? " login__role--on" : ""}`}>
               <input
@@ -61,8 +61,8 @@ export function Login({ onSignIn }: LoginProps) {
                 checked={role === "gm"}
                 onChange={() => setRole("gm")}
               />
-              <span className="login__role-title">Game Master</span>
-              <span className="login__role-desc">Create and run campaigns; view every character.</span>
+              <span className="login__role-title">Ведущий (мастер)</span>
+              <span className="login__role-desc">Создавай и веди кампании; смотри всех персонажей.</span>
             </label>
             <label className={`login__role${role === "player" ? " login__role--on" : ""}`}>
               <input
@@ -72,14 +72,14 @@ export function Login({ onSignIn }: LoginProps) {
                 checked={role === "player"}
                 onChange={() => setRole("player")}
               />
-              <span className="login__role-title">Player</span>
-              <span className="login__role-desc">Join a campaign by code and build your character.</span>
+              <span className="login__role-title">Игрок</span>
+              <span className="login__role-desc">Присоединяйся к кампании по коду и создавай персонажа.</span>
             </label>
           </div>
         </fieldset>
 
         <button type="submit" className="login__submit" disabled={!canSubmit}>
-          Enter
+          Войти
         </button>
       </form>
     </div>

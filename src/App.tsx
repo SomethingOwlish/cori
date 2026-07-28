@@ -42,8 +42,8 @@ export function App() {
   return (
     <main className="app">
       <header className="app__header">
-        <h1 className="app__title">Cori</h1>
-        <p className="app__tagline">Coriolis: The Third Horizon</p>
+        <h1 className="app__title">Кориолис. Третий Горизонт</h1>
+        <p className="app__tagline">Кампании, создание персонажей и карточки героев</p>
       </header>
 
       {!session ? (

@@ -56,7 +56,7 @@ export function PlayerHome({ session, campaigns, characters, onSignOut }: Player
     const list = await campaigns.list();
     const match = list.find((c) => c.joinCode.toUpperCase() === entered);
     if (!match) {
-      setJoinError("No campaign found with that code.");
+      setJoinError("Кампания с таким кодом не найдена.");
       return;
     }
 
@@ -85,16 +85,16 @@ export function PlayerHome({ session, campaigns, characters, onSignOut }: Player
     <div className="ph">
       <header className="ph__head">
         <div>
-          <h2 className="ph__title">Your campaigns</h2>
-          <p className="ph__welcome">Signed in as {session.name}</p>
+          <h2 className="ph__title">Твои кампании</h2>
+          <p className="ph__welcome">Вошёл как {session.name}</p>
         </div>
         <button type="button" className="ph__link" onClick={onSignOut}>
-          Sign out
+          Выйти
         </button>
       </header>
 
-      <section className="ph__join" aria-label="Join a campaign">
-        <h3 className="ph__subhead">Join a campaign</h3>
+      <section className="ph__join" aria-label="Присоединиться к кампании">
+        <h3 className="ph__subhead">Присоединиться к кампании</h3>
         <form
           className="ph__join-form"
           onSubmit={(e) => {
@@ -104,7 +104,7 @@ export function PlayerHome({ session, campaigns, characters, onSignOut }: Player
         >
           <input
             value={code}
-            placeholder="Enter join code, e.g. K7QP2M"
+            placeholder="Введи код, напр. K7QP2M"
             onChange={(e) => {
               setCode(e.target.value);
               setJoinError(null);
@@ -112,18 +112,17 @@ export function PlayerHome({ session, campaigns, characters, onSignOut }: Player
             aria-invalid={joinError !== null}
           />
           <button type="submit" className="ph__primary" disabled={code.trim() === ""}>
-            Join
+            Присоединиться
           </button>
         </form>
         {joinError && <p className="ph__error">{joinError}</p>}
       </section>
 
-      <section aria-label="Campaigns you've joined">
-        <h3 className="ph__subhead">Attached campaigns</h3>
+      <section aria-label="Кампании, к которым ты присоединился">
+        <h3 className="ph__subhead">Мои кампании</h3>
         {mine.length === 0 ? (
           <p className="ph__empty">
-            You haven’t joined any campaigns yet. Ask your Game Master for a join code and enter it
-            above.
+            Ты ещё не присоединился ни к одной кампании. Попроси у ведущего код и введи его выше.
           </p>
         ) : (
           <ul className="ph__list">
@@ -135,7 +134,7 @@ export function PlayerHome({ session, campaigns, characters, onSignOut }: Player
                   onClick={() => setActiveCampaignId(c.id)}
                 >
                   <span className="ph__item-name">{c.name}</span>
-                  <span className="ph__item-meta">GM: {c.gmName}</span>
+                  <span className="ph__item-meta">Ведущий: {c.gmName}</span>
                 </button>
               </li>
             ))}
