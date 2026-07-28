@@ -1,12 +1,17 @@
 /**
  * CharacterBuilder — пошаговый мастер создания персонажа «Кориолиса».
  *
- * Шаги повторяют порядок создания героя из корбука (гл. 2, стр. 21): биография,
- * амплуа и роль, характеристики, здоровье/рассудок, навыки, достоинства,
- * Лик-покровитель, личность, снаряжение, взаимоотношения и должность. Каждое
- * изменение проходит через `builderReducer` (границы соблюдаются там) и
- * непрерывно проверяется `assessCharacter` — игрок видит живой подсчёт пунктов и
- * нарушения правил. Каждый шаг сопровождается пояснением по материалам.
+ * Шаги повторяют порядок создания героя из корбука (гл. 2, стр. 21). Сначала вся
+ * команда определяется с амплуа команды, затем каждый игрок по порядку:
+ * биография → амплуа и роль → имя и внешность → характеристики → здоровье и
+ * рассудок → навыки → достоинство → Лик-покровитель → личная проблема и
+ * взаимоотношения → снаряжение → корабельная должность.
+ *
+ * Новый герой создаётся ПУСТЫМ: никакие значения не выбраны заранее. Пока выбор
+ * не сделан, зависящая от него информация не показывается. Каждое изменение
+ * проходит через `builderReducer` (границы соблюдаются там) и непрерывно
+ * проверяется `assessCharacter` — игрок видит живой подсчёт пунктов и нарушения
+ * правил.
  */
 
 import { useCallback, useEffect, useMemo, useReducer, useState } from "react";
@@ -35,11 +40,11 @@ import {
   assessCharacter,
   attributePointsSpent,
   attributeCreationCap,
+  createBlankCharacter,
   keySkillsOf,
   maxHitPoints,
   maxMindPoints,
   skillCreationCap,
-  generateCharacter,
   createRng,
   rollD66,
   iconForD66Roll,
@@ -80,15 +85,17 @@ function scoped(character: Character, campaignId?: string, playerName?: string):
 }
 
 const STEP_TITLES = [
+  "Амплуа команды",
   "Биография",
   "Амплуа и роль",
+  "Имя и внешность",
   "Характеристики",
   "Навыки",
   "Достоинства",
   "Лик-покровитель",
-  "Личность",
+  "Личность и связи",
   "Снаряжение",
-  "Команда",
+  "Должность",
   "Итог",
 ] as const;
 
@@ -104,7 +111,7 @@ export function CharacterBuilder({
 }: CharacterBuilderProps) {
   const [character, dispatch] = useReducer(
     builderReducer,
-    scoped(initialCharacter ?? generateCharacter({ id: newId(), seed: 1 }), campaignId, defaultPlayerName),
+    scoped(initialCharacter ?? createBlankCharacter(newId()), campaignId, defaultPlayerName),
   );
   const [step, setStep] = useState(0);
   const [seed, setSeed] = useState(2);
@@ -112,8 +119,10 @@ export function CharacterBuilder({
   const [saveState, setSaveState] = useState<SaveState>("idle");
 
   const assessment = useMemo(() => assessCharacter(character), [character]);
-  const concept = CONCEPTS[character.concept];
-  const profile = UPBRINGINGS[character.biography.upbringing];
+  const concept = character.concept ? CONCEPTS[character.concept] : undefined;
+  const profile = character.biography.upbringing
+    ? UPBRINGINGS[character.biography.upbringing]
+    : undefined;
 
   const refreshList = useCallback(async () => {
     try {
@@ -147,14 +156,15 @@ export function CharacterBuilder({
   const [gearChoice, setGearChoice] = useState<number[]>([]);
   useEffect(() => {
     // При смене амплуа сбрасываем выбор снаряжения на первый вариант каждой строки.
-    setGearChoice(concept.gear.map(() => 0));
-  }, [character.concept, concept.gear]);
+    setGearChoice((concept?.gear ?? []).map(() => 0));
+  }, [character.concept, concept?.gear]);
   const applyGear = useCallback(
     (choice: number[]) => {
+      if (!concept) return;
       const gear = concept.gear.map((row, i) => ({ name: row[choice[i] ?? 0] }));
       dispatch({ type: "patch", patch: { gear } });
     },
-    [concept.gear],
+    [concept],
   );
 
   const spentAttr = attributePointsSpent(character.attributes);
@@ -187,24 +197,24 @@ export function CharacterBuilder({
         </nav>
 
         <section className="cb__panel">
-          {step === 0 && (
-            <StepBiography character={character} dispatch={dispatch} />
+          {step === 0 && <StepTeamArchetype character={character} dispatch={dispatch} />}
+          {step === 1 && <StepBiography character={character} dispatch={dispatch} />}
+          {step === 2 && <StepConcept character={character} dispatch={dispatch} />}
+          {step === 3 && <StepIdentity character={character} dispatch={dispatch} />}
+          {step === 4 && (
+            <StepAttributes character={character} dispatch={dispatch} spent={spentAttr} pool={profile?.attributePoints} />
           )}
-          {step === 1 && <StepConcept character={character} dispatch={dispatch} />}
-          {step === 2 && (
-            <StepAttributes character={character} dispatch={dispatch} spent={spentAttr} pool={profile.attributePoints} />
+          {step === 5 && (
+            <StepSkills character={character} dispatch={dispatch} spent={spentSkill} pool={profile?.skillPoints} />
           )}
-          {step === 3 && (
-            <StepSkills character={character} dispatch={dispatch} spent={spentSkill} pool={profile.skillPoints} />
-          )}
-          {step === 4 && <StepTalents character={character} dispatch={dispatch} />}
-          {step === 5 && <StepIcon character={character} dispatch={dispatch} />}
-          {step === 6 && <StepIdentity character={character} dispatch={dispatch} />}
-          {step === 7 && (
+          {step === 6 && <StepTalents character={character} dispatch={dispatch} />}
+          {step === 7 && <StepIcon character={character} dispatch={dispatch} />}
+          {step === 8 && <StepPersonality character={character} dispatch={dispatch} />}
+          {step === 9 && (
             <StepGear character={character} gearChoice={gearChoice} setGearChoice={setGearChoice} applyGear={applyGear} />
           )}
-          {step === 8 && <StepTeam character={character} dispatch={dispatch} />}
-          {step === 9 && (
+          {step === 10 && <StepShipPosition character={character} dispatch={dispatch} />}
+          {step === 11 && (
             <StepSummary character={character} save={save} saveState={saveState} valid={assessment.valid} />
           )}
 
@@ -289,16 +299,51 @@ function Hint({ children }: { children: React.ReactNode }) {
   return <p className="cb__hint">{children}</p>;
 }
 
-// ── Шаг 1: Биография ────────────────────────────────────────────────────────
+/** Подсказка «сначала выберите …» для шагов, зависящих от предыдущего выбора. */
+function Prerequisite({ children }: { children: React.ReactNode }) {
+  return <p className="cb__prereq">↩ {children}</p>;
+}
+
+// ── Шаг 1: Амплуа команды ───────────────────────────────────────────────────
+function StepTeamArchetype({ character, dispatch }: { character: Character; dispatch: D }) {
+  return (
+    <div>
+      <h2>1. Амплуа команды</h2>
+      <Hint>
+        Прежде всего вся команда вместе решает, что вас объединяет. Амплуа команды задаёт общий
+        настрой кампании и открывает список <b>командных достоинств</b> — по одному из них возьмёт
+        каждый герой на шаге «Достоинства».
+      </Hint>
+      <div className="cb__choices">
+        {TEAM_ARCHETYPE_KEYS.map((key) => {
+          const t = TEAM_ARCHETYPES[key];
+          return (
+            <button
+              key={key}
+              type="button"
+              className={`cb__choice${character.teamArchetype === key ? " cb__choice--on" : ""}`}
+              onClick={() => dispatch({ type: "setTeamArchetype", team: key })}
+            >
+              <b>{t.name}</b>
+              <span>{t.description}</span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ── Шаг 2: Биография ────────────────────────────────────────────────────────
 function StepBiography({ character, dispatch }: { character: Character; dispatch: D }) {
   const bio = character.biography;
   return (
     <div>
-      <h2>1. Биография</h2>
+      <h2>2. Биография</h2>
       <Hint>
-        Первое — определись с биографией героя. Происхождение (планета и линия) на механику не
-        влияет и нужно только для отправной точки. А вот <b>воспитание</b> — ключевой выбор: оно
-        задаёт пункты характеристик и навыков, стартовую репутацию и богатство.
+        Определись с биографией героя. Происхождение (планета и линия) на механику не влияет и нужно
+        только для отправной точки. А вот <b>воспитание</b> — ключевой выбор: оно задаёт пункты
+        характеристик и навыков, стартовую репутацию и богатство.
       </Hint>
 
       <label className="cb__field">
@@ -319,6 +364,7 @@ function StepBiography({ character, dispatch }: { character: Character; dispatch
         <Hint>{BIRTH_PLANETS.find((p) => p.name === character.biography.homeworld)?.description}</Hint>
       )}
 
+      <h3>Линия происхождения</h3>
       <div className="cb__choices">
         {LINEAGES.map((l) => (
           <button
@@ -375,12 +421,12 @@ function StepBiography({ character, dispatch }: { character: Character; dispatch
   );
 }
 
-// ── Шаг 2: Амплуа и роль ────────────────────────────────────────────────────
+// ── Шаг 3: Амплуа и роль ────────────────────────────────────────────────────
 function StepConcept({ character, dispatch }: { character: Character; dispatch: D }) {
-  const concept = CONCEPTS[character.concept];
+  const concept = character.concept ? CONCEPTS[character.concept] : undefined;
   return (
     <div>
-      <h2>2. Амплуа и роль</h2>
+      <h2>3. Амплуа и роль</h2>
       <Hint>
         Амплуа определяет, чем герой зарабатывал на жизнь. Оно задаёт ключевую характеристику
         (её можно поднять до 5), достоинства, снаряжение и модификатор репутации. Каждая из трёх
@@ -391,9 +437,10 @@ function StepConcept({ character, dispatch }: { character: Character; dispatch: 
       <label className="cb__field">
         Амплуа
         <select
-          value={character.concept}
+          value={character.concept ?? ""}
           onChange={(e) => dispatch({ type: "setConcept", concept: e.target.value as ConceptKey })}
         >
+          <option value="">— не выбрано —</option>
           {CONCEPT_KEYS.map((k) => (
             <option key={k} value={k}>
               {CONCEPTS[k].name}
@@ -401,34 +448,83 @@ function StepConcept({ character, dispatch }: { character: Character; dispatch: 
           ))}
         </select>
       </label>
-      <Hint>{concept.description}</Hint>
-      <p className="cb__stat-line">
-        Ключевая характеристика: <b>{ATTRIBUTES[concept.keyAttribute].name}</b> · Репутация:{" "}
-        {concept.reputationModifier >= 0 ? `+${concept.reputationModifier}` : concept.reputationModifier}
-      </p>
 
-      <h3>Роль</h3>
-      <div className="cb__choices">
-        {concept.roles.map((r) => (
-          <button
-            key={r.key}
-            type="button"
-            className={`cb__choice${character.role === r.key ? " cb__choice--on" : ""}`}
-            onClick={() => dispatch({ type: "setRole", role: r.key })}
-          >
-            <b>{r.name}</b>
-            <span>{r.description}</span>
-            <span className="cb__stat-line">
-              Ключевые навыки: {r.keySkills.map((s) => SKILLS[s].name).join(", ")}
-            </span>
-          </button>
-        ))}
-      </div>
+      {concept ? (
+        <>
+          <Hint>{concept.description}</Hint>
+          <p className="cb__stat-line">
+            Ключевая характеристика: <b>{ATTRIBUTES[concept.keyAttribute].name}</b> · Репутация:{" "}
+            {concept.reputationModifier >= 0 ? `+${concept.reputationModifier}` : concept.reputationModifier}
+          </p>
+
+          <h3>Роль</h3>
+          <div className="cb__choices">
+            {concept.roles.map((r) => (
+              <button
+                key={r.key}
+                type="button"
+                className={`cb__choice${character.role === r.key ? " cb__choice--on" : ""}`}
+                onClick={() => dispatch({ type: "setRole", role: r.key })}
+              >
+                <b>{r.name}</b>
+                <span>{r.description}</span>
+                <span className="cb__stat-line">
+                  Ключевые навыки: {r.keySkills.map((s) => SKILLS[s].name).join(", ")}
+                </span>
+              </button>
+            ))}
+          </div>
+        </>
+      ) : (
+        <Prerequisite>Выбери амплуа, чтобы увидеть роли и ключевые навыки.</Prerequisite>
+      )}
     </div>
   );
 }
 
-// ── Шаг 3: Характеристики ───────────────────────────────────────────────────
+// ── Шаг 4: Имя и внешность ──────────────────────────────────────────────────
+function StepIdentity({ character, dispatch }: { character: Character; dispatch: D }) {
+  const concept = character.concept ? CONCEPTS[character.concept] : undefined;
+  return (
+    <div>
+      <h2>4. Имя и внешность</h2>
+      <Hint>
+        Имя и внешность не влияют на механику — они оживляют героя. В описании амплуа есть примеры
+        имён, черт лица и одежды.
+      </Hint>
+      <label className="cb__field">
+        Имя героя
+        <input
+          value={character.name}
+          onChange={(e) => dispatch({ type: "setText", field: "name", value: e.target.value })}
+          placeholder="Введите имя"
+        />
+      </label>
+      {concept && <p className="cb__stat-line">Примеры имён: {concept.names.join(", ")}</p>}
+      <label className="cb__field">
+        Имя игрока
+        <input
+          value={character.playerName ?? ""}
+          onChange={(e) => dispatch({ type: "setText", field: "playerName", value: e.target.value })}
+        />
+      </label>
+      <label className="cb__field">
+        Внешность
+        <input
+          value={character.appearance ?? ""}
+          onChange={(e) => dispatch({ type: "setText", field: "appearance", value: e.target.value })}
+        />
+      </label>
+      {concept && (
+        <p className="cb__stat-line">
+          Лицо: {concept.appearanceFace.join(", ")}. Одежда: {concept.appearanceClothing.join(", ")}.
+        </p>
+      )}
+    </div>
+  );
+}
+
+// ── Шаг 5: Характеристики ───────────────────────────────────────────────────
 function StepAttributes({
   character,
   dispatch,
@@ -438,23 +534,37 @@ function StepAttributes({
   character: Character;
   dispatch: D;
   spent: number;
-  pool: number;
+  pool: number | undefined;
 }) {
+  if (pool === undefined) {
+    return (
+      <div>
+        <h2>5. Характеристики</h2>
+        <Prerequisite>Сначала выбери воспитание на шаге «Биография» — оно задаёт пул пунктов.</Prerequisite>
+      </div>
+    );
+  }
   const remaining = pool - spent;
+  const keyAttr = character.concept ? CONCEPTS[character.concept].keyAttribute : undefined;
   return (
     <div>
-      <h2>3. Характеристики</h2>
+      <h2>5. Характеристики</h2>
       <Hint>
         Распредели пункты характеристик: сумма всех четырёх значений должна равняться <b>{pool}</b>{" "}
-        (по воспитанию). В каждую — от 2 до 4, и только в ключевую характеристику амплуа —{" "}
-        <b>{ATTRIBUTES[CONCEPTS[character.concept].keyAttribute].name}</b> — можно вложить до 5.
+        (по воспитанию). В каждую — от 2 до 4
+        {keyAttr ? (
+          <>
+            , и только в ключевую характеристику амплуа — <b>{ATTRIBUTES[keyAttr].name}</b> — можно вложить до 5
+          </>
+        ) : null}
+        .
       </Hint>
       <p className={`cb__pool${remaining === 0 ? " cb__pool--ok" : ""}`}>
         Распределено: {spent} / {pool} (осталось {remaining})
       </p>
       {ATTRIBUTE_KEYS.map((key) => {
         const cap = attributeCreationCap(character.concept, key);
-        const isKey = key === CONCEPTS[character.concept].keyAttribute;
+        const isKey = key === keyAttr;
         return (
           <div key={key} className="cb__row">
             <span className="cb__row-name">
@@ -487,7 +597,7 @@ function StepAttributes({
   );
 }
 
-// ── Шаг 4: Навыки ───────────────────────────────────────────────────────────
+// ── Шаг 6: Навыки ───────────────────────────────────────────────────────────
 function StepSkills({
   character,
   dispatch,
@@ -497,8 +607,24 @@ function StepSkills({
   character: Character;
   dispatch: D;
   spent: number;
-  pool: number;
+  pool: number | undefined;
 }) {
+  if (pool === undefined) {
+    return (
+      <div>
+        <h2>6. Навыки</h2>
+        <Prerequisite>Сначала выбери воспитание на шаге «Биография» — оно задаёт пул пунктов.</Prerequisite>
+      </div>
+    );
+  }
+  if (!character.concept || !character.role) {
+    return (
+      <div>
+        <h2>6. Навыки</h2>
+        <Prerequisite>Сначала выбери амплуа и роль — от роли зависят ключевые навыки.</Prerequisite>
+      </div>
+    );
+  }
   const remaining = pool - spent;
   const keySkills = keySkillsOf(character.concept, character.role);
   const renderRow = (key: SkillKey) => {
@@ -529,7 +655,7 @@ function StepSkills({
   };
   return (
     <div>
-      <h2>4. Навыки</h2>
+      <h2>6. Навыки</h2>
       <Hint>
         Распредели <b>{pool}</b> пунктов навыков (по воспитанию). В ключевые навыки роли (отмечены
         ★) можно вложить до 3; в остальные — максимум по 1. Общими навыками можно пользоваться даже
@@ -552,41 +678,44 @@ function StepSkills({
   );
 }
 
-// ── Шаг 5: Достоинства ──────────────────────────────────────────────────────
+// ── Шаг 7: Достоинства ──────────────────────────────────────────────────────
 function StepTalents({ character, dispatch }: { character: Character; dispatch: D }) {
-  const concept = CONCEPTS[character.concept];
+  const concept = character.concept ? CONCEPTS[character.concept] : undefined;
   const team = character.teamArchetype ? TEAM_ARCHETYPES[character.teamArchetype] : undefined;
-  const icon = ICONS[character.icon];
   return (
     <div>
-      <h2>5. Достоинства</h2>
+      <h2>7. Достоинства</h2>
       <Hint>
         В начале игры герой получает три достоинства: <b>личное</b> (из амплуа), <b>командное</b>{" "}
-        (из амплуа команды) и <b>дар Лика</b>-покровителя. Пасынок получает ещё и стигму. Мистик
-        обязан взять мистическую практику как личное достоинство.
+        (из амплуа команды) и <b>дар Лика</b>-покровителя (определяется на следующем шаге). Пасынок
+        получает ещё и стигму. В каждом списке можно выбрать <b>только одно</b> достоинство.
       </Hint>
 
-      <h3>Личное достоинство (амплуа «{concept.name}»)</h3>
-      <div className="cb__choices">
-        {concept.talentChoices.map((key) => {
-          const t = TALENTS[key];
-          const on = character.talents.includes(key);
-          return (
-            <button
-              key={key}
-              type="button"
-              className={`cb__choice${on ? " cb__choice--on" : ""}`}
-              onClick={() => dispatch({ type: "toggleTalent", key })}
-            >
-              <b>{t?.name ?? key}</b>
-              <span>{t?.summary}</span>
-            </button>
-          );
-        })}
-      </div>
+      <h3>Личное достоинство {concept ? `(амплуа «${concept.name}»)` : ""}</h3>
+      {concept ? (
+        <div className="cb__choices">
+          {concept.talentChoices.map((key) => {
+            const t = TALENTS[key];
+            const on = character.talents.includes(key);
+            return (
+              <button
+                key={key}
+                type="button"
+                className={`cb__choice${on ? " cb__choice--on" : ""}`}
+                onClick={() => dispatch({ type: "chooseTalent", key, options: concept.talentChoices })}
+              >
+                <b>{t?.name ?? key}</b>
+                <span>{t?.summary}</span>
+              </button>
+            );
+          })}
+        </div>
+      ) : (
+        <Prerequisite>Выбери амплуа на шаге «Амплуа и роль», чтобы взять личное достоинство.</Prerequisite>
+      )}
 
-      <h3>Достоинство команды {team ? `(«${team.name}»)` : "(выбери амплуа команды на шаге «Команда»)"}</h3>
-      {team && (
+      <h3>Достоинство команды {team ? `(«${team.name}»)` : ""}</h3>
+      {team ? (
         <div className="cb__choices">
           {team.talentChoices.map((key) => {
             const t = TALENTS[key];
@@ -596,7 +725,7 @@ function StepTalents({ character, dispatch }: { character: Character; dispatch: 
                 key={key}
                 type="button"
                 className={`cb__choice${on ? " cb__choice--on" : ""}`}
-                onClick={() => dispatch({ type: "toggleTalent", key })}
+                onClick={() => dispatch({ type: "chooseTalent", key, options: team.talentChoices })}
               >
                 <b>{t?.name ?? key}</b>
                 <span>{t?.summary}</span>
@@ -604,15 +733,14 @@ function StepTalents({ character, dispatch }: { character: Character; dispatch: 
             );
           })}
         </div>
+      ) : (
+        <Prerequisite>Выбери амплуа команды на шаге 1, чтобы взять командное достоинство.</Prerequisite>
       )}
-
-      <h3>Дар Лика — {icon.name}</h3>
-      <p className="cb__hint">{icon.gift}</p>
     </div>
   );
 }
 
-// ── Шаг 6: Лик-покровитель ──────────────────────────────────────────────────
+// ── Шаг 8: Лик-покровитель ──────────────────────────────────────────────────
 function StepIcon({ character, dispatch }: { character: Character; dispatch: D }) {
   const [lastRoll, setLastRoll] = useState<number | null>(null);
   const rollIcon = () => {
@@ -623,7 +751,7 @@ function StepIcon({ character, dispatch }: { character: Character; dispatch: D }
   };
   return (
     <div>
-      <h2>6. Лик-покровитель</h2>
+      <h2>8. Лик-покровитель</h2>
       <Hint>
         Каждый герой рождается под знаком одного из девяти Ликов и получает его дар. По правилам
         Лик определяется случайно броском d66 (табл. 2.5), но при желании выбери вручную.
@@ -654,42 +782,25 @@ function StepIcon({ character, dispatch }: { character: Character; dispatch: D }
   );
 }
 
-// ── Шаг 7: Личность ─────────────────────────────────────────────────────────
-function StepIdentity({ character, dispatch }: { character: Character; dispatch: D }) {
-  const concept = CONCEPTS[character.concept];
+// ── Шаг 9: Личная проблема и взаимоотношения ─────────────────────────────────
+function StepPersonality({ character, dispatch }: { character: Character; dispatch: D }) {
+  const concept = character.concept ? CONCEPTS[character.concept] : undefined;
+  if (!concept) {
+    return (
+      <div>
+        <h2>9. Личность и связи</h2>
+        <Prerequisite>Личные проблемы и примеры связей зависят от амплуа — выбери его сначала.</Prerequisite>
+      </div>
+    );
+  }
   return (
     <div>
-      <h2>7. Личность</h2>
+      <h2>9. Личность и связи</h2>
       <Hint>
-        Имя, внешность и личная проблема оживляют героя. Личная проблема — инструмент ведущего для
-        создания историй; столкнувшись с ней, ты можешь заработать пункты опыта.
+        Личная проблема — инструмент ведущего для создания историй; столкнувшись с ней, ты можешь
+        заработать пункты опыта. Взаимоотношения связывают тебя с другими персонажами игроков.
       </Hint>
-      <label className="cb__field">
-        Имя героя
-        <input
-          value={character.name}
-          onChange={(e) => dispatch({ type: "setText", field: "name", value: e.target.value })}
-          placeholder="Введите имя"
-        />
-      </label>
-      <p className="cb__stat-line">Примеры имён: {concept.names.join(", ")}</p>
-      <label className="cb__field">
-        Имя игрока
-        <input
-          value={character.playerName ?? ""}
-          onChange={(e) => dispatch({ type: "setText", field: "playerName", value: e.target.value })}
-        />
-      </label>
-      <label className="cb__field">
-        Внешность
-        <input
-          value={character.appearance ?? ""}
-          onChange={(e) => dispatch({ type: "setText", field: "appearance", value: e.target.value })}
-        />
-      </label>
-      <p className="cb__stat-line">
-        Лицо: {concept.appearanceFace.join(", ")}. Одежда: {concept.appearanceClothing.join(", ")}.
-      </p>
+
       <h3>Личная проблема</h3>
       <div className="cb__choices">
         {concept.personalProblems.map((p) => (
@@ -697,98 +808,15 @@ function StepIdentity({ character, dispatch }: { character: Character; dispatch:
             key={p}
             type="button"
             className={`cb__choice${character.personalProblem === p ? " cb__choice--on" : ""}`}
-            onClick={() => dispatch({ type: "setText", field: "personalProblem", value: p })}
+            onClick={() =>
+              dispatch({
+                type: "setText",
+                field: "personalProblem",
+                value: character.personalProblem === p ? "" : p,
+              })
+            }
           >
             <span>{p}</span>
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// ── Шаг 8: Снаряжение ───────────────────────────────────────────────────────
-function StepGear({
-  character,
-  gearChoice,
-  setGearChoice,
-  applyGear,
-}: {
-  character: Character;
-  gearChoice: number[];
-  setGearChoice: (c: number[]) => void;
-  applyGear: (c: number[]) => void;
-}) {
-  const concept = CONCEPTS[character.concept];
-  const choose = (row: number, opt: number) => {
-    const next = concept.gear.map((_, i) => (i === row ? opt : gearChoice[i] ?? 0));
-    setGearChoice(next);
-    applyGear(next);
-  };
-  return (
-    <div>
-      <h2>8. Снаряжение</h2>
-      <Hint>
-        Начальное снаряжение достаётся герою бесплатно. Выбери по одному предмету из каждой строки.
-        Стартовое богатство: <b>{character.birr.toLocaleString("ru-RU")}</b> бирр — на них можно
-        докупить снаряжение в игре.
-      </Hint>
-      {concept.gear.map((row, i) => (
-        <div key={i} className="cb__gear-row">
-          {row.map((item, opt) => (
-            <button
-              key={opt}
-              type="button"
-              className={`cb__choice${(gearChoice[i] ?? 0) === opt ? " cb__choice--on" : ""}`}
-              onClick={() => choose(i, opt)}
-            >
-              <span>{item}</span>
-            </button>
-          ))}
-        </div>
-      ))}
-    </div>
-  );
-}
-
-// ── Шаг 9: Команда и должность ──────────────────────────────────────────────
-function StepTeam({ character, dispatch }: { character: Character; dispatch: D }) {
-  const concept = CONCEPTS[character.concept];
-  return (
-    <div>
-      <h2>9. Команда</h2>
-      <Hint>
-        Определитесь с амплуа команды (оно даёт командное достоинство на шаге 5) и распределите
-        корабельные должности. Также запишите взаимоотношения с другими персонажами игроков.
-      </Hint>
-      <h3>Амплуа команды</h3>
-      <div className="cb__choices">
-        {TEAM_ARCHETYPE_KEYS.map((key) => {
-          const t = TEAM_ARCHETYPES[key];
-          return (
-            <button
-              key={key}
-              type="button"
-              className={`cb__choice${character.teamArchetype === key ? " cb__choice--on" : ""}`}
-              onClick={() => dispatch({ type: "setTeamArchetype", team: key })}
-            >
-              <b>{t.name}</b>
-              <span>{t.description}</span>
-            </button>
-          );
-        })}
-      </div>
-
-      <h3>Корабельная должность</h3>
-      <div className="cb__choices">
-        {SHIP_POSITION_KEYS.map((key) => (
-          <button
-            key={key}
-            type="button"
-            className={`cb__choice${character.shipPosition === key ? " cb__choice--on" : ""}`}
-            onClick={() => dispatch({ type: "setShipPosition", position: key })}
-          >
-            <b>{SHIP_POSITIONS[key]}</b>
           </button>
         ))}
       </div>
@@ -822,7 +850,84 @@ function StepTeam({ character, dispatch }: { character: Character; dispatch: D }
   );
 }
 
-// ── Шаг 10: Итог ────────────────────────────────────────────────────────────
+// ── Шаг 10: Снаряжение ──────────────────────────────────────────────────────
+function StepGear({
+  character,
+  gearChoice,
+  setGearChoice,
+  applyGear,
+}: {
+  character: Character;
+  gearChoice: number[];
+  setGearChoice: (c: number[]) => void;
+  applyGear: (c: number[]) => void;
+}) {
+  const concept = character.concept ? CONCEPTS[character.concept] : undefined;
+  if (!concept) {
+    return (
+      <div>
+        <h2>10. Снаряжение</h2>
+        <Prerequisite>Начальное снаряжение зависит от амплуа — выбери его сначала.</Prerequisite>
+      </div>
+    );
+  }
+  const choose = (row: number, opt: number) => {
+    const next = concept.gear.map((_, i) => (i === row ? opt : gearChoice[i] ?? 0));
+    setGearChoice(next);
+    applyGear(next);
+  };
+  return (
+    <div>
+      <h2>10. Снаряжение</h2>
+      <Hint>
+        Начальное снаряжение достаётся герою бесплатно. Выбери по одному предмету из каждой строки.
+        Стартовое богатство: <b>{character.birr.toLocaleString("ru-RU")}</b> бирр — на них можно
+        докупить снаряжение в игре.
+      </Hint>
+      {concept.gear.map((row, i) => (
+        <div key={i} className="cb__gear-row">
+          {row.map((item, opt) => (
+            <button
+              key={opt}
+              type="button"
+              className={`cb__choice${(gearChoice[i] ?? 0) === opt ? " cb__choice--on" : ""}`}
+              onClick={() => choose(i, opt)}
+            >
+              <span>{item}</span>
+            </button>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── Шаг 11: Корабельная должность ────────────────────────────────────────────
+function StepShipPosition({ character, dispatch }: { character: Character; dispatch: D }) {
+  return (
+    <div>
+      <h2>11. Должность на корабле</h2>
+      <Hint>
+        В последнюю очередь команда распределяет корабельные должности. У каждого героя — одна
+        должность.
+      </Hint>
+      <div className="cb__choices">
+        {SHIP_POSITION_KEYS.map((key) => (
+          <button
+            key={key}
+            type="button"
+            className={`cb__choice${character.shipPosition === key ? " cb__choice--on" : ""}`}
+            onClick={() => dispatch({ type: "setShipPosition", position: key })}
+          >
+            <b>{SHIP_POSITIONS[key]}</b>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── Шаг 12: Итог ────────────────────────────────────────────────────────────
 function StepSummary({
   character,
   save,
@@ -836,7 +941,7 @@ function StepSummary({
 }) {
   return (
     <div>
-      <h2>10. Итог</h2>
+      <h2>12. Итог</h2>
       <Hint>
         Проверь готовую карточку справа. Уровни навыка: {Object.entries(SKILL_LEVEL_NAMES)
           .filter(([n]) => Number(n) > 0)
@@ -849,7 +954,7 @@ function StepSummary({
           ? "Сборка соответствует правилам — можно сохранять."
           : "В сборке есть ошибки (см. ассесмент справа)."}
       </p>
-      <button type="button" className="cb__save" onClick={save} disabled={saveState === "saving"}>
+      <button type="button" className="cb__save" onClick={save} disabled={saveState === "saving" || !valid}>
         {saveState === "saving" ? "Сохранение…" : "Сохранить героя"}
       </button>
       {saveState === "saved" && <span className="cb__ok"> Сохранено!</span>}

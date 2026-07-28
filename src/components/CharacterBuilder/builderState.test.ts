@@ -91,12 +91,24 @@ describe("builderReducer", () => {
     expect(upOther.skills[nonKey]).toBe(OTHER_SKILL_CREATION_MAX);
   });
 
-  it("переключает достоинство", () => {
+  it("выбирает достоинство из слота и допускает повторное снятие", () => {
+    const options = ["tough", "seasonedWarrior", "reinforcedMusclesImplant"];
     const start = { ...base(), talents: [] };
-    const added = builderReducer(start, { type: "toggleTalent", key: "tough" });
+    const added = builderReducer(start, { type: "chooseTalent", key: "tough", options });
     expect(added.talents).toContain("tough");
-    const removed = builderReducer(added, { type: "toggleTalent", key: "tough" });
+    const removed = builderReducer(added, { type: "chooseTalent", key: "tough", options });
     expect(removed.talents).not.toContain("tough");
+  });
+
+  it("держит в слоте только одно достоинство (замена, а не добавление)", () => {
+    const options = ["tough", "seasonedWarrior", "reinforcedMusclesImplant"];
+    const start = { ...base(), talents: ["tough", "keepMe"] };
+    const next = builderReducer(start, { type: "chooseTalent", key: "seasonedWarrior", options });
+    // Прежний вариант из этого же списка снят, посторонние достоинства сохранены.
+    expect(next.talents).toContain("seasonedWarrior");
+    expect(next.talents).not.toContain("tough");
+    expect(next.talents).toContain("keepMe");
+    expect(next.talents.filter((t) => options.includes(t))).toHaveLength(1);
   });
 
   it("не мутирует исходного персонажа", () => {

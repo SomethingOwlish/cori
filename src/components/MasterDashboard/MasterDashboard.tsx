@@ -191,7 +191,7 @@ export function MasterDashboard({
               <li key={c.id} className="md__card">
                 <button type="button" className="md__card-main" onClick={() => setViewing(c)}>
                   <span className="md__card-name">{c.name || "Без имени"}</span>
-                  <span className="md__card-concept">{CONCEPTS[c.concept].name}</span>
+                  <span className="md__card-concept">{c.concept ? CONCEPTS[c.concept].name : "Черновик"}</span>
                   <span className="md__card-player">
                     {c.playerName ? `Игрок: ${c.playerName}` : "Игрок не назначен"}
                   </span>

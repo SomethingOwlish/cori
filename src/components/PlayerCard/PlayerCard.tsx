@@ -107,9 +107,9 @@ export function PlayerCard({ character, editMode, onChange, canLevelUp, onRaiseS
 
   const active = canEdit && editing;
 
-  const concept = CONCEPTS[character.concept];
+  const concept = character.concept ? CONCEPTS[character.concept] : undefined;
   const role = findRole(character.concept, character.role);
-  const icon = ICONS[character.icon];
+  const icon = character.icon ? ICONS[character.icon] : undefined;
   const { upbringing, parentage } = character.biography;
 
   const hpMax = maxHitPoints(character.attributes);
@@ -161,9 +161,6 @@ export function PlayerCard({ character, editMode, onChange, canLevelUp, onRaiseS
     );
   };
 
-  const roleName = role ? ` · ${role.name}` : "";
-  const strayName = parentage === "stray" ? ` · ${PARENTAGES.stray.name}` : "";
-
   return (
     <article className="pcard" aria-label={`Лист персонажа ${character.name || "без имени"}`}>
       {/* Тулбар правки */}
@@ -194,20 +191,27 @@ export function PlayerCard({ character, editMode, onChange, canLevelUp, onRaiseS
             <h1 className="pcard__name">{character.name || "Без имени"}</h1>
           )}
           <p className="pcard__concept">
-            {concept.name}
-            {roleName} · {UPBRINGINGS[upbringing].name}
-            {strayName}
-            {character.teamArchetype ? ` · ${TEAM_ARCHETYPES[character.teamArchetype].name}` : ""}
-            {character.shipPosition ? ` · ${SHIP_POSITIONS[character.shipPosition]}` : ""}
+            {[
+              concept?.name,
+              role?.name,
+              upbringing ? UPBRINGINGS[upbringing].name : undefined,
+              parentage === "stray" ? PARENTAGES.stray.name : undefined,
+              character.teamArchetype ? TEAM_ARCHETYPES[character.teamArchetype].name : undefined,
+              character.shipPosition ? SHIP_POSITIONS[character.shipPosition] : undefined,
+            ]
+              .filter(Boolean)
+              .join(" · ") || "Черновик героя"}
           </p>
         </div>
-        <div className="pcard__icon" title={icon.description}>
-          <span className="pcard__icon-ar" aria-hidden>الأيقونات</span>
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 2 }}>
-            <span className="pcard__icon-label">Лик</span>
-            <span className="pcard__icon-name">{icon.name}</span>
+        {icon ? (
+          <div className="pcard__icon" title={icon.description}>
+            <span className="pcard__icon-ar" aria-hidden>الأيقونات</span>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 2 }}>
+              <span className="pcard__icon-label">Лик</span>
+              <span className="pcard__icon-name">{icon.name}</span>
+            </div>
           </div>
-        </div>
+        ) : null}
       </header>
 
       <div className="pcard__grid">
@@ -240,7 +244,7 @@ export function PlayerCard({ character, editMode, onChange, canLevelUp, onRaiseS
           <Card variant="gilt" eyebrow="Профиль" title="Характеристики">
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
               {ATTRIBUTE_KEYS.map((key) => {
-                const isKey = key === concept.keyAttribute;
+                const isKey = !!concept && key === concept.keyAttribute;
                 return (
                   <div key={key} className="pcard-well" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, padding: "12px 10px", borderColor: isKey ? "var(--border-gold)" : undefined }}>
                     <span className={MICRO_LABEL}>{ATTRIBUTES[key].name}</span>
@@ -341,7 +345,7 @@ export function PlayerCard({ character, editMode, onChange, canLevelUp, onRaiseS
           {/* Достоинства */}
           <Card title="Достоинства">
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              <TalentRow name={`Дар · ${icon.name}`} summary={icon.gift} astral />
+              {icon ? <TalentRow name={`Дар · ${icon.name}`} summary={icon.gift} astral /> : null}
               {character.talents.map((key) => {
                 const t = TALENTS[key];
                 return <TalentRow key={key} name={t ? t.name : key} summary={t?.summary ?? ""} onRemove={active && isMaster ? () => patch({ talents: character.talents.filter((x) => x !== key) }) : undefined} />;

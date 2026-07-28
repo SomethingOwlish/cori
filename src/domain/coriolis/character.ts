@@ -77,16 +77,21 @@ export interface Relationship {
   isDebt?: boolean;
 }
 
-/** Биография героя (на игровую механику влияет только воспитание и происхождение). */
+/**
+ * Биография героя (на игровую механику влияет только воспитание и происхождение).
+ *
+ * При создании персонажа поля пусты, пока игрок не сделает выбор: `undefined`
+ * означает «ещё не выбрано» и не должно выводиться как готовое значение.
+ */
 export interface Biography {
   /** Родная планета (свободный текст). */
   homeworld?: string;
   /** Линия: зенитиец или первопоселенец (свободный текст). */
   lineage?: string;
-  /** Воспитание — определяет пункты, репутацию и богатство. */
-  upbringing: Upbringing;
-  /** Человек или пасынок. */
-  parentage: Parentage;
+  /** Воспитание — определяет пункты, репутацию и богатство. `undefined` — не выбрано. */
+  upbringing?: Upbringing;
+  /** Человек или пасынок. `undefined` — не выбрано. */
+  parentage?: Parentage;
 }
 
 export interface Character {
@@ -99,10 +104,10 @@ export interface Character {
   // Биография
   biography: Biography;
 
-  // Амплуа
-  concept: ConceptKey;
-  /** Ключ роли внутри амплуа. */
-  role: string;
+  // Амплуа (`undefined` при создании, пока не выбрано)
+  concept?: ConceptKey;
+  /** Ключ роли внутри амплуа. `undefined`/"" — не выбрана. */
+  role?: string;
 
   // Внешность и история
   appearance?: string;
@@ -114,8 +119,8 @@ export interface Character {
   /** Портрет героя (data-URL или ссылка). */
   portraitUrl?: string;
 
-  // Лик-покровитель
-  icon: IconKey;
+  // Лик-покровитель (`undefined` — ещё не определён броском d66)
+  icon?: IconKey;
 
   // Основные показатели
   attributes: AttributeScores;
@@ -184,18 +189,17 @@ export function attributePointsSpent(attributes: AttributeScores): number {
 }
 
 /**
- * Создаёт пустого, но структурно валидного персонажа. Ожидается, что вызывающий
- * заполнит биографию, показатели и снаряжение — обычно через генератор.
+ * Создаёт пустой черновик персонажа для мастера создания. Все выборы (амплуа,
+ * роль, воспитание, происхождение, Лик, амплуа команды) не сделаны, показатели
+ * на минимуме, текстовые поля пусты. Генератор случайного героя заполняет всё
+ * сам; ручное создание ведётся шаг за шагом от этой заготовки.
  */
 export function createBlankCharacter(id: string): Character {
   const attributes = baseAttributeScores();
   return {
     id,
     name: "",
-    biography: { upbringing: "plebeian", parentage: "human" },
-    concept: "soldier",
-    role: "legionnaire",
-    icon: "theTraveler",
+    biography: {},
     attributes,
     skills: baseSkillScores(),
     talents: [],

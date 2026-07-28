@@ -10,7 +10,6 @@
 
 import {
   ATTRIBUTE_MIN,
-  CONCEPTS,
   SKILL_MIN,
   UPBRINGINGS,
   attributeCreationCap,
@@ -46,7 +45,7 @@ export type BuilderAction =
   | { type: "setShipPosition"; position: ShipPosition }
   | { type: "adjustAttribute"; key: AttributeKey; delta: number }
   | { type: "adjustSkill"; key: SkillKey; delta: number }
-  | { type: "toggleTalent"; key: string }
+  | { type: "chooseTalent"; key: string; options: readonly string[] }
   | { type: "patch"; patch: Partial<Character> };
 
 function clamp(value: number, min: number, max: number): number {
@@ -108,8 +107,9 @@ export function builderReducer(character: Character, action: BuilderAction): Cha
     }
 
     case "setConcept": {
-      // Амплуа задаёт первую роль по умолчанию и меняет пределы — обрезаем.
-      const role = CONCEPTS[action.concept].roles[0].key;
+      // Смена амплуа сбрасывает роль (роли у амплуа разные) и меняет пределы.
+      // Роль игрок выбирает следующим шагом — не подставляем её сами.
+      const role = character.concept === action.concept ? character.role : undefined;
       let next: Character = { ...character, concept: action.concept, role };
       next = clampAttributes(next);
       next = clampSkills(next);
@@ -134,7 +134,7 @@ export function builderReducer(character: Character, action: BuilderAction): Cha
       if (action.parentage === "stray" && bio.upbringing === "privileged") {
         bio = { ...bio, upbringing: "stationary" };
       }
-      const birr = UPBRINGINGS[bio.upbringing].birr;
+      const birr = bio.upbringing ? UPBRINGINGS[bio.upbringing].birr : character.birr;
       return withReputation({ ...character, biography: bio, birr });
     }
 
@@ -159,11 +159,14 @@ export function builderReducer(character: Character, action: BuilderAction): Cha
       return { ...character, skills: { ...character.skills, [action.key]: next } };
     }
 
-    case "toggleTalent": {
-      const has = character.talents.includes(action.key);
-      const talents = has
-        ? character.talents.filter((t) => t !== action.key)
-        : [...character.talents, action.key];
+    case "chooseTalent": {
+      // Единственный выбор в слоте: снимаем прочие варианты из этого же списка
+      // (например, личное достоинство амплуа даётся ровно одно), затем ставим
+      // выбранный — либо снимаем его, если кликнули повторно.
+      const optionSet = new Set(action.options);
+      const wasSelected = character.talents.includes(action.key);
+      const talents = character.talents.filter((t) => !optionSet.has(t));
+      if (!wasSelected) talents.push(action.key);
       return { ...character, talents };
     }
 
