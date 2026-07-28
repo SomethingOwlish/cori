@@ -17,17 +17,21 @@ import { useEffect, useMemo, useState } from "react";
 import { Login } from "./components/Login";
 import { MasterDashboard } from "./components/MasterDashboard";
 import { PlayerHome } from "./components/PlayerHome";
+import { ThirdHorizonPage } from "./components/ThirdHorizon";
 import {
   ensureSignedIn,
   FirestoreCampaignRepository,
   FirestoreCharacterRepository,
+  FirestoreThirdHorizonRepository,
   getFirestoreDb,
   LocalStorageCampaignRepository,
   LocalStorageCharacterRepository,
+  LocalStorageThirdHorizonRepository,
   readFirebaseConfigFromEnv,
   signInWithGoogle,
   type CampaignRepository,
   type CharacterRepository,
+  type ThirdHorizonRepository,
 } from "./data";
 import { clearSession, loadSession, saveSession, type Session } from "./session";
 import "./App.css";
@@ -35,6 +39,7 @@ import "./App.css";
 interface Repositories {
   characters: CharacterRepository;
   campaigns: CampaignRepository;
+  thirdHorizon: ThirdHorizonRepository;
 }
 
 /** True when the `VITE_FIREBASE_*` env is fully configured for this build. */
@@ -60,6 +65,7 @@ function createRepositories(): Repositories {
     return {
       characters: new FirestoreCharacterRepository(db),
       campaigns: new FirestoreCampaignRepository(db),
+      thirdHorizon: new FirestoreThirdHorizonRepository(db),
     };
   } catch (error) {
     console.warn(
@@ -70,14 +76,19 @@ function createRepositories(): Repositories {
     return {
       characters: new LocalStorageCharacterRepository(),
       campaigns: new LocalStorageCampaignRepository(),
+      thirdHorizon: new LocalStorageThirdHorizonRepository(),
     };
   }
 }
 
+/** Top-level destination after sign-in: the role dashboard or the shared atlas. */
+type View = "home" | "atlas";
+
 export function App() {
   // One repository instance each for the app's lifetime.
-  const { characters, campaigns } = useMemo(createRepositories, []);
+  const { characters, campaigns, thirdHorizon } = useMemo(createRepositories, []);
   const firebaseEnabled = useMemo(isFirebaseConfigured, []);
+  const [view, setView] = useState<View>("home");
 
   // Firestore's rules require an authenticated client. When Firebase is
   // configured we sign in anonymously on load and hold the authenticated UI back
@@ -138,20 +149,48 @@ export function App() {
         <p className="app__loading">Подключение…</p>
       ) : !session ? (
         <Login onSignIn={handleSignIn} onGoogleSignIn={handleGoogleSignIn} />
-      ) : session.role === "gm" ? (
-        <MasterDashboard
-          session={session}
-          campaigns={campaigns}
-          characters={characters}
-          onSignOut={handleSignOut}
-        />
       ) : (
-        <PlayerHome
-          session={session}
-          campaigns={campaigns}
-          characters={characters}
-          onSignOut={handleSignOut}
-        />
+        <>
+          <nav className="app__nav" aria-label="Разделы">
+            <button
+              type="button"
+              className={`app__nav-tab${view === "home" ? " app__nav-tab--active" : ""}`}
+              aria-current={view === "home"}
+              onClick={() => setView("home")}
+            >
+              {session.role === "gm" ? "Кабинет ведущего" : "Мои кампании"}
+            </button>
+            <button
+              type="button"
+              className={`app__nav-tab${view === "atlas" ? " app__nav-tab--active" : ""}`}
+              aria-current={view === "atlas"}
+              onClick={() => setView("atlas")}
+            >
+              Третий Горизонт
+            </button>
+          </nav>
+
+          {view === "atlas" ? (
+            <ThirdHorizonPage
+              repository={thirdHorizon}
+              editMode={session.role === "gm" ? "master" : "player"}
+            />
+          ) : session.role === "gm" ? (
+            <MasterDashboard
+              session={session}
+              campaigns={campaigns}
+              characters={characters}
+              onSignOut={handleSignOut}
+            />
+          ) : (
+            <PlayerHome
+              session={session}
+              campaigns={campaigns}
+              characters={characters}
+              onSignOut={handleSignOut}
+            />
+          )}
+        </>
       )}
     </main>
   );

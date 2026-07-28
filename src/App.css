@@ -51,6 +51,43 @@
   font-size: var(--fs-lg);
 }
 
+.app__nav {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--line);
+}
+
+.app__nav-tab {
+  position: relative;
+  padding: 10px 16px 12px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--sand-dim);
+  transition: color var(--dur-fast) var(--ease-out);
+}
+
+.app__nav-tab:hover { color: var(--sand); }
+
+.app__nav-tab--active { color: var(--gold-bright); }
+
+.app__nav-tab--active::after {
+  content: "";
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: -1px;
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--gold-deep), var(--gold-bright));
+}
+
 @media (max-width: 700px) {
   .app { padding: 16px 14px 48px; }
   .app__header { flex-wrap: wrap; gap: 12px; }
