@@ -1,17 +1,22 @@
 /**
- * PlayerHome — the player's entry after signing in.
+ * PlayerHome — вход игрока.
  *
- * Shows the campaigns this player has joined and lets them join a new one by the
- * code their Game Master shares. Picking a campaign opens the character builder
- * scoped to it (their player name pre-filled), so anything they save shows up on
- * the GM's dashboard for that campaign.
+ * Игрок присоединяется к кампании по коду ведущего. Выбрав кампанию:
+ *   - если герой уже создан — открывается его КАРТОЧКА (основной экран игрока),
+ *     где он может править своё «ровно как прокачку»: навыки, бирры, внешность,
+ *     взаимоотношения;
+ *   - если героя ещё нет — открывается мастер создания (CharacterBuilder),
+ *     после сохранения игрок попадает на карточку.
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { CampaignRepository, CharacterRepository } from "../../data";
 import { addPlayer, hasPlayer, type Campaign } from "../../domain/campaign";
+import type { Character } from "../../domain/coriolis";
 import type { Session } from "../../session";
 import { CharacterBuilder } from "../CharacterBuilder";
+import { PlayerCard } from "../PlayerCard";
+import { Button, Card, Input } from "../../design-system";
 import "./PlayerHome.css";
 
 export interface PlayerHomeProps {
@@ -26,6 +31,8 @@ export function PlayerHome({ session, campaigns, characters, onSignOut }: Player
   const [code, setCode] = useState("");
   const [joinError, setJoinError] = useState<string | null>(null);
   const [activeCampaignId, setActiveCampaignId] = useState<string | null>(null);
+  const [myChar, setMyChar] = useState<Character | null>(null);
+  const [charLoaded, setCharLoaded] = useState(false);
 
   const refresh = useCallback(async () => {
     setAll(await campaigns.list());
@@ -35,18 +42,35 @@ export function PlayerHome({ session, campaigns, characters, onSignOut }: Player
     void refresh();
   }, [refresh]);
 
-  // Campaigns this player is attached to.
   const mine = useMemo(
-    () =>
-      all
-        .filter((c) => hasPlayer(c, session.name))
-        .sort((a, b) => b.createdAt - a.createdAt),
+    () => all.filter((c) => hasPlayer(c, session.name)).sort((a, b) => b.createdAt - a.createdAt),
     [all, session.name],
   );
 
-  const activeCampaign = activeCampaignId
-    ? (all.find((c) => c.id === activeCampaignId) ?? null)
-    : null;
+  const activeCampaign = activeCampaignId ? (all.find((c) => c.id === activeCampaignId) ?? null) : null;
+
+  // Загружаем героя игрока в выбранной кампании.
+  const loadMyChar = useCallback(
+    async (campaignId: string) => {
+      setCharLoaded(false);
+      const list = await characters.list();
+      const found =
+        list.find(
+          (c) => c.campaignId === campaignId && (c.playerName ?? "").toLowerCase() === session.name.toLowerCase(),
+        ) ?? null;
+      setMyChar(found);
+      setCharLoaded(true);
+    },
+    [characters, session.name],
+  );
+
+  useEffect(() => {
+    if (activeCampaignId) void loadMyChar(activeCampaignId);
+    else {
+      setMyChar(null);
+      setCharLoaded(false);
+    }
+  }, [activeCampaignId, loadMyChar]);
 
   const handleJoin = async () => {
     const entered = code.trim().toUpperCase();
@@ -59,42 +83,77 @@ export function PlayerHome({ session, campaigns, characters, onSignOut }: Player
       setJoinError("Кампания с таким кодом не найдена.");
       return;
     }
-
     const updated = addPlayer(match, session.name);
     if (updated !== match) await campaigns.save(updated);
-
     setCode("");
     await refresh();
     setActiveCampaignId(match.id);
   };
 
-  // ---- Builder for the chosen campaign -----------------------------------
+  // ── Активная кампания: карточка или билдер ───────────────────────────────
   if (activeCampaign) {
+    const back = (
+      <div className="ph__crumbs">
+        <Button variant="ghost" size="sm" onClick={() => setActiveCampaignId(null)}>
+          ← К кампаниям
+        </Button>
+        <span className="ph__crumb-name">{activeCampaign.name}</span>
+      </div>
+    );
+
+    if (!charLoaded) {
+      return (
+        <div className="ph">
+          {back}
+          <p className="ph__empty">Загрузка героя…</p>
+        </div>
+      );
+    }
+
+    if (myChar) {
+      return (
+        <div className="ph">
+          {back}
+          <PlayerCard
+            character={myChar}
+            editMode="self"
+            onChange={(next) => {
+              setMyChar(next);
+              void characters.save(next);
+            }}
+          />
+        </div>
+      );
+    }
+
     return (
-      <CharacterBuilder
-        repository={characters}
-        campaignId={activeCampaign.id}
-        defaultPlayerName={session.name}
-        onBack={() => setActiveCampaignId(null)}
-      />
+      <div className="ph">
+        {back}
+        <CharacterBuilder
+          repository={characters}
+          campaignId={activeCampaign.id}
+          defaultPlayerName={session.name}
+          onBack={() => setActiveCampaignId(null)}
+          onSaved={(c) => setMyChar(c)}
+        />
+      </div>
     );
   }
 
-  // ---- Campaign chooser ---------------------------------------------------
+  // ── Список кампаний ──────────────────────────────────────────────────────
   return (
     <div className="ph">
       <header className="ph__head">
         <div>
-          <h2 className="ph__title">Твои кампании</h2>
-          <p className="ph__welcome">Вошёл как {session.name}</p>
+          <h2 className="ph__title crl-title">Твои кампании</h2>
+          <p className="ph__welcome">С возвращением, {session.name}</p>
         </div>
-        <button type="button" className="ph__link" onClick={onSignOut}>
+        <Button variant="ghost" size="sm" onClick={onSignOut}>
           Выйти
-        </button>
+        </Button>
       </header>
 
-      <section className="ph__join" aria-label="Присоединиться к кампании">
-        <h3 className="ph__subhead">Присоединиться к кампании</h3>
+      <Card variant="gilt" eyebrow="Портал" title="Присоединиться к кампании" style={{ maxWidth: 620 }}>
         <form
           className="ph__join-form"
           onSubmit={(e) => {
@@ -102,40 +161,35 @@ export function PlayerHome({ session, campaigns, characters, onSignOut }: Player
             void handleJoin();
           }}
         >
-          <input
+          <Input
             value={code}
-            placeholder="Введи код, напр. K7QP2M"
+            placeholder="Код входа, напр. K7QP2M"
             onChange={(e) => {
               setCode(e.target.value);
               setJoinError(null);
             }}
             aria-invalid={joinError !== null}
+            error={joinError ?? undefined}
+            wrapStyle={{ flex: 1 }}
           />
-          <button type="submit" className="ph__primary" disabled={code.trim() === ""}>
+          <Button type="submit" disabled={code.trim() === ""}>
             Присоединиться
-          </button>
+          </Button>
         </form>
-        {joinError && <p className="ph__error">{joinError}</p>}
-      </section>
+      </Card>
 
-      <section aria-label="Кампании, к которым ты присоединился">
-        <h3 className="ph__subhead">Мои кампании</h3>
+      <section aria-label="Мои кампании">
+        <h3 className="ph__subhead crl-eyebrow">Мои кампании</h3>
         {mine.length === 0 ? (
-          <p className="ph__empty">
-            Ты ещё не присоединился ни к одной кампании. Попроси у ведущего код и введи его выше.
-          </p>
+          <p className="ph__empty">Ты ещё не в одной кампании. Попроси у ведущего код и введи его выше.</p>
         ) : (
           <ul className="ph__list">
             {mine.map((c) => (
               <li key={c.id}>
-                <button
-                  type="button"
-                  className="ph__item"
-                  onClick={() => setActiveCampaignId(c.id)}
-                >
+                <Card interactive onClick={() => setActiveCampaignId(c.id)} style={{ cursor: "pointer" }}>
                   <span className="ph__item-name">{c.name}</span>
                   <span className="ph__item-meta">Ведущий: {c.gmName}</span>
-                </button>
+                </Card>
               </li>
             ))}
           </ul>

@@ -26,6 +26,46 @@ export interface GearItem {
   notes?: string;
 }
 
+/**
+ * Оружие с боевыми характеристиками (для секции «Оружие» на карточке).
+ * Значения соответствуют строкам печатного бланка: инициатива, урон, порог
+ * критического, заряды.
+ */
+export interface Weapon {
+  name: string;
+  /** Дистанция: «БЛИЖНЯЯ», «СРЕДНЯЯ», «ДАЛЬНЯЯ» и т. п. (свободный текст). */
+  range?: string;
+  /** Модификатор инициативы (напр. +2). */
+  initiative?: number;
+  /** Урон. */
+  damage?: number;
+  /** Порог (критического попадания). */
+  crit?: number;
+  /** Заряды/боезапас (null — не применимо). */
+  ammo?: number | null;
+  /** Свойства оружия (свободный текст). */
+  features?: string;
+}
+
+/** Броня — класс защиты и название. */
+export interface Armor {
+  /** Класс защиты. */
+  rating: number;
+  /** Название брони (напр. «лёгкий скафандр»). */
+  name?: string;
+}
+
+/** Травма/состояние, влияющее на броски. */
+export interface Injury {
+  name: string;
+  /** Краткий эффект (напр. «−1 куб.»). */
+  effect?: string;
+  /** Подробное описание. */
+  description?: string;
+  /** Критическая травма. */
+  critical?: boolean;
+}
+
 export interface Relationship {
   /** Имя персонажа, с которым установлена связь. */
   name: string;
@@ -33,6 +73,8 @@ export interface Relationship {
   description: string;
   /** Отмечен как «Друг» — ближайший товарищ. */
   isFriend?: boolean;
+  /** Отмечен как «Долг» — герой что-то должен этому персонажу. */
+  isDebt?: boolean;
 }
 
 /** Биография героя (на игровую механику влияет только воспитание и происхождение). */
@@ -64,7 +106,13 @@ export interface Character {
 
   // Внешность и история
   appearance?: string;
+  /** Черты лица (для секции «Внешний вид»). */
+  appearanceFace?: string;
+  /** Одежда (для секции «Внешний вид»). */
+  appearanceClothing?: string;
   personalProblem?: string;
+  /** Портрет героя (data-URL или ссылка). */
+  portraitUrl?: string;
 
   // Лик-покровитель
   icon: IconKey;
@@ -88,11 +136,23 @@ export interface Character {
   // Ресурсы
   birr: number;
   gear: GearItem[];
+  /** Оружие с боевыми характеристиками. */
+  weapons?: Weapon[];
+  /** Носимая броня. */
+  armor?: Armor;
 
   // Текущие показатели (максимумы вычисляются)
   hitPointsCurrent: number;
   mindPointsCurrent: number;
   radiation: number;
+  /** Полученные травмы. */
+  injuries?: Injury[];
+
+  // Заметки
+  /** Свободные заметки игрока/мастера. */
+  notes?: string;
+  /** Описание каюты героя. */
+  quarters?: string;
 }
 
 /** Запас здоровья = телосложение + ловкость. */

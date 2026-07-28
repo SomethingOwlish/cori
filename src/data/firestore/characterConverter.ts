@@ -12,14 +12,17 @@
  */
 
 import type {
+  Armor,
   Biography,
   Character,
   ConceptKey,
   GearItem,
   IconKey,
+  Injury,
   Relationship,
   ShipPosition,
   TeamArchetypeKey,
+  Weapon,
 } from "../../domain/coriolis";
 import type { AttributeScores } from "../../domain/coriolis";
 import type { SkillScores } from "../../domain/coriolis";
@@ -44,7 +47,10 @@ export interface CharacterDocument {
   role: string;
   icon: IconKey;
   appearance?: string;
+  appearanceFace?: string;
+  appearanceClothing?: string;
   personalProblem?: string;
+  portraitUrl?: string;
 
   attributes: AttributeScores;
   skills: SkillScores;
@@ -59,10 +65,16 @@ export interface CharacterDocument {
 
   birr: number;
   gear: GearItem[];
+  weapons?: Weapon[];
+  armor?: Armor;
 
   hitPointsCurrent: number;
   mindPointsCurrent: number;
   radiation: number;
+  injuries?: Injury[];
+
+  notes?: string;
+  quarters?: string;
 }
 
 /** Сериализует доменного `Character` в документ Firestore (без `id`). */
@@ -98,9 +110,17 @@ export function characterToDocument(character: Character): CharacterDocument {
   if (character.playerName !== undefined) doc.playerName = character.playerName;
   if (character.campaignId !== undefined) doc.campaignId = character.campaignId;
   if (character.appearance !== undefined) doc.appearance = character.appearance;
+  if (character.appearanceFace !== undefined) doc.appearanceFace = character.appearanceFace;
+  if (character.appearanceClothing !== undefined) doc.appearanceClothing = character.appearanceClothing;
   if (character.personalProblem !== undefined) doc.personalProblem = character.personalProblem;
+  if (character.portraitUrl !== undefined) doc.portraitUrl = character.portraitUrl;
   if (character.teamArchetype !== undefined) doc.teamArchetype = character.teamArchetype;
   if (character.shipPosition !== undefined) doc.shipPosition = character.shipPosition;
+  if (character.weapons !== undefined) doc.weapons = character.weapons.map((w) => ({ ...w }));
+  if (character.armor !== undefined) doc.armor = { ...character.armor };
+  if (character.injuries !== undefined) doc.injuries = character.injuries.map((i) => ({ ...i }));
+  if (character.notes !== undefined) doc.notes = character.notes;
+  if (character.quarters !== undefined) doc.quarters = character.quarters;
 
   return doc;
 }
@@ -141,9 +161,17 @@ export function documentToCharacter(id: string, raw: CharacterDocument): Charact
   if (doc.playerName !== undefined) character.playerName = doc.playerName;
   if (doc.campaignId !== undefined) character.campaignId = doc.campaignId;
   if (doc.appearance !== undefined) character.appearance = doc.appearance;
+  if (doc.appearanceFace !== undefined) character.appearanceFace = doc.appearanceFace;
+  if (doc.appearanceClothing !== undefined) character.appearanceClothing = doc.appearanceClothing;
   if (doc.personalProblem !== undefined) character.personalProblem = doc.personalProblem;
+  if (doc.portraitUrl !== undefined) character.portraitUrl = doc.portraitUrl;
   if (doc.teamArchetype !== undefined) character.teamArchetype = doc.teamArchetype;
   if (doc.shipPosition !== undefined) character.shipPosition = doc.shipPosition;
+  if (doc.weapons !== undefined) character.weapons = doc.weapons.map((w) => ({ ...w }));
+  if (doc.armor !== undefined) character.armor = { ...doc.armor };
+  if (doc.injuries !== undefined) character.injuries = doc.injuries.map((i) => ({ ...i }));
+  if (doc.notes !== undefined) character.notes = doc.notes;
+  if (doc.quarters !== undefined) character.quarters = doc.quarters;
 
   return character;
 }

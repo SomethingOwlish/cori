@@ -1,319 +1,301 @@
-/* Master dashboard styling — matches the app's dark palette. */
+/* Панель ведущего — золочёные панели на звёздном фоне. */
 
 .md {
-  --border: #2a2f3a;
-  --muted: #7a8291;
-  --accent: #c9a24b;
-  --panel: #141821;
-
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
-  color: #e6e9ef;
-  font-family: system-ui, -apple-system, sans-serif;
+  gap: 20px;
 }
 
 .md__head,
 .md__camp-head {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
-  gap: 1rem;
+  align-items: flex-end;
+  gap: 16px;
 }
 
 .md__title,
 .md__camp-name {
   margin: 0;
-  font-size: 1.5rem;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--fs-display-m);
+  letter-spacing: var(--ls-display);
+  color: var(--ivory);
 }
 
 .md__welcome,
 .md__camp-meta {
-  margin: 0.2rem 0 0;
-  color: var(--muted);
-  font-size: 0.9rem;
-}
-
-.md__subhead {
-  margin: 0 0 0.6rem;
-  font-size: 1rem;
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+  margin: 4px 0 0;
+  color: var(--sand);
+  font-size: var(--fs-sm);
 }
 
 .md__link {
   background: transparent;
   border: none;
-  color: var(--muted);
+  color: var(--text-link);
   cursor: pointer;
-  font-size: 0.9rem;
-  padding: 0.2rem 0;
+  font-family: var(--font-display);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
+.md__link:hover { color: var(--astral); }
 
-.md__link:hover {
-  color: var(--accent);
+.md__crumbs { margin-bottom: 4px; }
+
+/* Секции-панели */
+.md__create,
+.md__players,
+.md__toolbar,
+.md__danger {
+  background: var(--hull);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-lg);
+  padding: 18px 20px;
+  box-shadow: var(--shadow-sm);
 }
+.md__create { border-color: var(--border-gold); background: linear-gradient(180deg, var(--hull-2), var(--hull)); box-shadow: var(--inner-gilt), var(--shadow-md); }
 
-.md__crumbs {
-  margin-bottom: -0.25rem;
-}
-
-/* Create form */
-.md__create {
-  padding: 1rem 1.1rem;
-  border: 1px solid var(--border);
-  border-radius: 0.7rem;
-  background: var(--panel);
+.md__subhead {
+  margin: 0 0 12px;
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: var(--ls-eyebrow);
+  text-transform: uppercase;
+  color: var(--gold);
 }
 
 .md__create-form {
   display: flex;
-  gap: 0.6rem;
-  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
 }
-
 .md__create-form input {
-  flex: 1 1 18rem;
-  padding: 0.6rem 0.7rem;
-  border: 1px solid var(--border);
-  border-radius: 0.5rem;
-  background: #0d1017;
-  color: #e6e9ef;
-  font-size: 0.95rem;
-}
-
-.md__create-form input:focus {
+  flex: 1;
+  height: 44px;
+  padding: 0 14px;
+  background: var(--gold-12);
+  color: var(--ivory);
+  border: 1px solid var(--border-gold);
+  border-radius: var(--radius-md);
+  font-family: var(--font-body);
+  font-size: 14px;
   outline: none;
-  border-color: var(--accent);
 }
 
-.md__primary {
-  padding: 0.6rem 1rem;
-  border: none;
-  border-radius: 0.5rem;
-  background: var(--accent);
-  color: #1a1408;
+/* Кнопки */
+.md__primary,
+.md__danger-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 40px;
+  padding: 0 18px;
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  font-family: var(--font-display);
   font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
   cursor: pointer;
+  white-space: nowrap;
 }
-
-.md__primary:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
+.md__primary {
+  background: linear-gradient(180deg, var(--gold-bright), var(--gold-deep));
+  color: var(--gold-ink);
+  box-shadow: var(--gloss-gold);
 }
+.md__primary:disabled { opacity: 0.45; pointer-events: none; }
+.md__primary:hover { filter: brightness(1.06); }
+.md__danger { display: flex; justify-content: flex-end; background: transparent; border: none; box-shadow: none; padding: 8px 0; }
+.md__danger-btn {
+  background: transparent;
+  color: var(--garnet);
+  border-color: rgba(212, 96, 90, 0.5);
+}
+.md__danger-btn:hover { background: var(--garnet-12); }
 
-/* Campaign list */
+/* Списки кампаний */
 .md__camp-list {
   list-style: none;
   margin: 0;
   padding: 0;
   display: grid;
-  gap: 0.6rem;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
 }
-
 .md__camp-item {
   width: 100%;
   text-align: left;
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-  padding: 0.85rem 1rem;
-  border: 1px solid var(--border);
-  border-radius: 0.6rem;
-  background: var(--panel);
-  color: inherit;
+  background: var(--hull);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-lg);
+  padding: 16px 18px;
   cursor: pointer;
+  transition: border-color var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
 }
-
-.md__camp-item:hover {
-  border-color: var(--accent);
-}
-
+.md__camp-item:hover { border-color: var(--border-gold); transform: translateY(-2px); }
 .md__camp-item-name {
+  display: block;
+  font-family: var(--font-display);
   font-weight: 600;
-  font-size: 1.05rem;
+  font-size: 15px;
+  letter-spacing: 0.03em;
+  color: var(--ivory);
 }
-
 .md__camp-item-meta {
-  color: var(--muted);
-  font-size: 0.85rem;
+  display: block;
+  margin-top: 4px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--sand);
 }
 
-/* Campaign detail */
+/* Код входа */
 .md__camp-code {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 0.15rem;
-  padding: 0.5rem 0.8rem;
-  border: 1px dashed var(--accent);
-  border-radius: 0.6rem;
+  gap: 2px;
+  background: var(--void);
+  border: 1px solid var(--border-gold);
+  border-radius: var(--radius-md);
+  padding: 8px 14px;
 }
-
 .md__camp-code-label {
-  font-size: 0.7rem;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--muted);
+  color: var(--sand-faint);
 }
-
 .md__camp-code-value {
-  font-family: ui-monospace, "SF Mono", Menlo, monospace;
-  font-size: 1.3rem;
-  letter-spacing: 0.15em;
-  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  color: var(--gold-bright);
 }
 
 .md__players {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.4rem;
+  gap: 8px;
+  padding: 14px 18px;
 }
-
 .md__player-chip {
-  padding: 0.25rem 0.6rem;
-  border-radius: 1rem;
-  background: rgba(201, 162, 75, 0.12);
-  border: 1px solid var(--border);
-  font-size: 0.82rem;
+  background: var(--hull-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
+  padding: 4px 12px;
+  font-size: 12.5px;
+  color: var(--parchment);
 }
 
-.md__toolbar {
-  display: flex;
-  gap: 0.6rem;
-}
+.md__toolbar { display: flex; justify-content: flex-end; background: transparent; border: none; box-shadow: none; padding: 0; }
 
-/* Character grid */
+/* Ростер персонажей */
 .md__grid {
   list-style: none;
   margin: 0;
   padding: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
-  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 14px;
 }
-
 .md__card {
   display: flex;
   flex-direction: column;
-  border: 1px solid var(--border);
-  border-radius: 0.6rem;
-  background: var(--panel);
+  background: var(--hull);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-lg);
   overflow: hidden;
 }
-
 .md__card-main {
+  text-align: left;
+  background: transparent;
+  border: none;
+  padding: 16px 18px 12px;
+  cursor: pointer;
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
-  text-align: left;
-  padding: 0.9rem 1rem;
-  background: transparent;
-  border: none;
-  color: inherit;
-  cursor: pointer;
+  gap: 3px;
 }
-
-.md__card-main:hover {
-  background: rgba(201, 162, 75, 0.06);
-}
-
+.md__card-main:hover { background: var(--hull-2); }
 .md__card-name {
+  font-family: var(--font-display);
   font-weight: 600;
-  font-size: 1.05rem;
+  font-size: 15px;
+  color: var(--ivory);
 }
-
-.md__card-concept {
-  color: var(--accent);
-  font-size: 0.85rem;
-}
-
-.md__card-player {
-  color: var(--muted);
-  font-size: 0.8rem;
-}
-
+.md__card-concept { font-size: 12.5px; color: var(--gold); }
+.md__card-player { font-size: 12px; color: var(--sand-dim); }
 .md__card-actions {
   display: flex;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--line-soft);
 }
-
 .md__card-actions button {
   flex: 1;
-  padding: 0.5rem;
   background: transparent;
   border: none;
-  color: var(--muted);
+  border-right: 1px solid var(--line-soft);
+  padding: 9px 8px;
+  color: var(--sand);
   cursor: pointer;
-  font-size: 0.82rem;
+  font-size: 11.5px;
+  font-family: var(--font-display);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
-
-.md__card-actions button:first-child {
-  border-right: 1px solid var(--border);
-}
-
-.md__card-actions button:hover {
-  color: #e6e9ef;
-  background: rgba(255, 255, 255, 0.03);
-}
+.md__card-actions button:last-child { border-right: none; }
+.md__card-actions button:hover { background: var(--hull-3); color: var(--gold-bright); }
 
 .md__empty {
-  color: var(--muted);
-  font-size: 0.9rem;
+  color: var(--sand-dim);
+  font-size: var(--fs-sm);
+  background: var(--hull);
+  border: 1px dashed var(--line);
+  border-radius: var(--radius-md);
+  padding: 16px;
   margin: 0;
 }
 
-.md__danger {
-  margin-top: 0.5rem;
-}
-
-.md__danger-btn {
-  background: transparent;
-  border: 1px solid #4a2a2a;
-  color: #d16a6a;
-  border-radius: 0.5rem;
-  padding: 0.45rem 0.8rem;
-  cursor: pointer;
-  font-size: 0.82rem;
-}
-
-.md__danger-btn:hover {
-  background: rgba(209, 106, 106, 0.1);
-}
-
-/* Card overlay */
+/* Оверлей карточки */
 .md__overlay {
   position: fixed;
   inset: 0;
-  background: rgba(6, 8, 12, 0.7);
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  padding: 2.5rem 1rem;
-  overflow-y: auto;
-  z-index: 50;
+  z-index: 1000;
+  background: rgba(4, 8, 10, 0.78);
+  backdrop-filter: blur(3px);
+  overflow: auto;
+  padding: 24px 16px 48px;
 }
-
 .md__overlay-inner {
   position: relative;
+  max-width: var(--container-app);
+  margin: 0 auto;
 }
-
 .md__overlay-close {
-  position: absolute;
-  top: -0.75rem;
-  right: -0.75rem;
-  width: 2rem;
-  height: 2rem;
-  border-radius: 50%;
-  border: 1px solid var(--border);
-  background: var(--panel);
-  color: #e6e9ef;
+  position: sticky;
+  top: 0;
+  float: right;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-gold);
+  background: var(--hull-2);
+  color: var(--gold-bright);
   cursor: pointer;
-  font-size: 0.9rem;
-  z-index: 1;
+  font-size: 16px;
+  z-index: 2;
 }
+.md__overlay-close:hover { background: var(--hull-3); }
 
-.md__overlay-close:hover {
-  border-color: var(--accent);
+@media (max-width: 560px) {
+  .md__create-form { flex-direction: column; align-items: stretch; }
+  .md__head, .md__camp-head { flex-wrap: wrap; }
 }

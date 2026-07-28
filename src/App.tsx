@@ -123,9 +123,15 @@ export function App() {
 
   return (
     <main className="app">
-      <header className="app__header">
-        <h1 className="app__title">Кориолис. Третий Горизонт</h1>
-        <p className="app__tagline">Кампании, создание персонажей и карточки героев</p>
+      <header className="app__header crl-girih">
+        <div className="app__brand">
+          <span className="crl-eyebrow">الأفق الثالث · Третий Горизонт</span>
+          <h1 className="app__title crl-wordmark">Кориолис</h1>
+          <p className="app__tagline crl-flavor">Капитанский журнал: кампании, герои и их листы.</p>
+        </div>
+        <span className="app__mark crl-arabic" aria-hidden>
+          كوريوليس
+        </span>
       </header>
 
       {!authReady ? (

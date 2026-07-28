@@ -61,6 +61,8 @@ export interface CharacterBuilderProps {
   defaultPlayerName?: string;
   /** Кнопка возврата (к списку кампаний / панели мастера). */
   onBack?: () => void;
+  /** Вызывается после успешного сохранения (напр. чтобы показать карточку). */
+  onSaved?: (character: Character) => void;
 }
 
 function newId(): string {
@@ -98,6 +100,7 @@ export function CharacterBuilder({
   campaignId,
   defaultPlayerName,
   onBack,
+  onSaved,
 }: CharacterBuilderProps) {
   const [character, dispatch] = useReducer(
     builderReducer,
@@ -130,13 +133,15 @@ export function CharacterBuilder({
   const save = useCallback(async () => {
     setSaveState("saving");
     try {
-      await repository.save(scoped(character, campaignId));
+      const toSave = scoped(character, campaignId);
+      await repository.save(toSave);
       setSaveState("saved");
       await refreshList();
+      onSaved?.(toSave);
     } catch {
       setSaveState("error");
     }
-  }, [character, repository, refreshList, campaignId]);
+  }, [character, repository, refreshList, campaignId, onSaved]);
 
   // ── Снаряжение: выбор одного предмета из каждой строки ────────────────────
   const [gearChoice, setGearChoice] = useState<number[]>([]);
@@ -224,7 +229,7 @@ export function CharacterBuilder({
                   setSeed((s) => s + 1);
                 }}
               >
-                🎲 Случайный герой
+                ✦ Случайный герой
               </button>
             </div>
             <button type="button" disabled={step === STEP_TITLES.length - 1} onClick={() => setStep((s) => s + 1)}>
@@ -624,7 +629,7 @@ function StepIcon({ character, dispatch }: { character: Character; dispatch: D }
         Лик определяется случайно броском d66 (табл. 2.5), но при желании выбери вручную.
       </Hint>
       <button type="button" className="cb__roll" onClick={rollIcon}>
-        🎲 Бросить d66{lastRoll !== null ? ` — выпало ${lastRoll}` : ""}
+        ✦ Бросить d66{lastRoll !== null ? ` — выпало ${lastRoll}` : ""}
       </button>
       <div className="cb__choices">
         {ICON_KEYS.map((key) => {
@@ -845,7 +850,7 @@ function StepSummary({
           : "В сборке есть ошибки (см. ассесмент справа)."}
       </p>
       <button type="button" className="cb__save" onClick={save} disabled={saveState === "saving"}>
-        {saveState === "saving" ? "Сохранение…" : "💾 Сохранить героя"}
+        {saveState === "saving" ? "Сохранение…" : "Сохранить героя"}
       </button>
       {saveState === "saved" && <span className="cb__ok"> Сохранено!</span>}
       {saveState === "error" && <span className="cb__bad"> Ошибка сохранения.</span>}
