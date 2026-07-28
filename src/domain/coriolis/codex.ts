@@ -13,6 +13,7 @@
  */
 
 import { ICONS, ICON_KEYS } from "./icons";
+import { CAMPAIGN_CODEX } from "./codexCampaigns";
 import { SHIP_CODEX } from "./codexShips";
 import { TALENTS, TALENT_KEYS, type TalentKind } from "./talents";
 
@@ -576,6 +577,7 @@ export const BUILTIN_CODEX: readonly CodexEntry[] = [
   ...ICON_GIFTS_AS_CODEX,
   ...MYSTIC_POWERS,
   ...SHIP_CODEX,
+  ...CAMPAIGN_CODEX,
 ];
 
 /** Число встроенных записей по типам — для бейджей на вкладках. */
