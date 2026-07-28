@@ -1,0 +1,319 @@
+/* Master dashboard styling — matches the app's dark palette. */
+
+.md {
+  --border: #2a2f3a;
+  --muted: #7a8291;
+  --accent: #c9a24b;
+  --panel: #141821;
+
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  color: #e6e9ef;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.md__head,
+.md__camp-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.md__title,
+.md__camp-name {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.md__welcome,
+.md__camp-meta {
+  margin: 0.2rem 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.md__subhead {
+  margin: 0 0 0.6rem;
+  font-size: 1rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.md__link {
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.9rem;
+  padding: 0.2rem 0;
+}
+
+.md__link:hover {
+  color: var(--accent);
+}
+
+.md__crumbs {
+  margin-bottom: -0.25rem;
+}
+
+/* Create form */
+.md__create {
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--border);
+  border-radius: 0.7rem;
+  background: var(--panel);
+}
+
+.md__create-form {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.md__create-form input {
+  flex: 1 1 18rem;
+  padding: 0.6rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  background: #0d1017;
+  color: #e6e9ef;
+  font-size: 0.95rem;
+}
+
+.md__create-form input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.md__primary {
+  padding: 0.6rem 1rem;
+  border: none;
+  border-radius: 0.5rem;
+  background: var(--accent);
+  color: #1a1408;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.md__primary:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* Campaign list */
+.md__camp-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.md__camp-item {
+  width: 100%;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 0.6rem;
+  background: var(--panel);
+  color: inherit;
+  cursor: pointer;
+}
+
+.md__camp-item:hover {
+  border-color: var(--accent);
+}
+
+.md__camp-item-name {
+  font-weight: 600;
+  font-size: 1.05rem;
+}
+
+.md__camp-item-meta {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+/* Campaign detail */
+.md__camp-code {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.15rem;
+  padding: 0.5rem 0.8rem;
+  border: 1px dashed var(--accent);
+  border-radius: 0.6rem;
+}
+
+.md__camp-code-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.md__camp-code-value {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 1.3rem;
+  letter-spacing: 0.15em;
+  color: var(--accent);
+}
+
+.md__players {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.md__player-chip {
+  padding: 0.25rem 0.6rem;
+  border-radius: 1rem;
+  background: rgba(201, 162, 75, 0.12);
+  border: 1px solid var(--border);
+  font-size: 0.82rem;
+}
+
+.md__toolbar {
+  display: flex;
+  gap: 0.6rem;
+}
+
+/* Character grid */
+.md__grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+  gap: 0.75rem;
+}
+
+.md__card {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: 0.6rem;
+  background: var(--panel);
+  overflow: hidden;
+}
+
+.md__card-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  text-align: left;
+  padding: 0.9rem 1rem;
+  background: transparent;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.md__card-main:hover {
+  background: rgba(201, 162, 75, 0.06);
+}
+
+.md__card-name {
+  font-weight: 600;
+  font-size: 1.05rem;
+}
+
+.md__card-concept {
+  color: var(--accent);
+  font-size: 0.85rem;
+}
+
+.md__card-player {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.md__card-actions {
+  display: flex;
+  border-top: 1px solid var(--border);
+}
+
+.md__card-actions button {
+  flex: 1;
+  padding: 0.5rem;
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.82rem;
+}
+
+.md__card-actions button:first-child {
+  border-right: 1px solid var(--border);
+}
+
+.md__card-actions button:hover {
+  color: #e6e9ef;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.md__empty {
+  color: var(--muted);
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.md__danger {
+  margin-top: 0.5rem;
+}
+
+.md__danger-btn {
+  background: transparent;
+  border: 1px solid #4a2a2a;
+  color: #d16a6a;
+  border-radius: 0.5rem;
+  padding: 0.45rem 0.8rem;
+  cursor: pointer;
+  font-size: 0.82rem;
+}
+
+.md__danger-btn:hover {
+  background: rgba(209, 106, 106, 0.1);
+}
+
+/* Card overlay */
+.md__overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(6, 8, 12, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 2.5rem 1rem;
+  overflow-y: auto;
+  z-index: 50;
+}
+
+.md__overlay-inner {
+  position: relative;
+}
+
+.md__overlay-close {
+  position: absolute;
+  top: -0.75rem;
+  right: -0.75rem;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: #e6e9ef;
+  cursor: pointer;
+  font-size: 0.9rem;
+  z-index: 1;
+}
+
+.md__overlay-close:hover {
+  border-color: var(--accent);
+}
