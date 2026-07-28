@@ -1,92 +1,100 @@
-# Cori
+# Cori — «Кориолис. Третий Горизонт»
 
-A player-card and character-generation toolkit for **Coriolis: The Third Horizon**
-(Free League Publishing, Year Zero Engine).
+Мастер создания персонажа и карточка героя для настольной ролевой игры
+**«Кориолис. Третий Горизонт»** (Free League, движок Year Zero), русское издание.
 
-This repository contains the base domain model and a structural player-card UI.
-Visual design is intentionally minimal for now — the priority is a correct,
-well-typed structure for characters and a working generation/assessment engine.
+Приложение моделирует **механику и структуру** создания героя строго по корбуку
+(ST3001, глава 2). Текст правил не воспроизводится — для игры нужна официальная
+книга правил.
 
-> This project models game *mechanics and structure* only. It contains no
-> rulebook text. You need the official Coriolis rulebook to play.
+## Что делает приложение
 
-## Stack
+- **Пошаговый мастер создания** — 10 шагов в порядке из корбука: биография,
+  амплуа и роль, характеристики, навыки, достоинства, Лик-покровитель, личность,
+  снаряжение, команда и итог. Каждый шаг сопровождается пояснением и живым
+  ассесментом (подсчёт пунктов и проверка правил).
+- **Карточка героя** — только для отображения. Менять показатели можно лишь двумя
+  способами: включив **режим мастера** (правка трекеров) или **прокачку**
+  (поднятие навыков за пункты опыта, 5 опыта → +1).
+
+## Стек
 
 - **TypeScript + React** (Vite)
-- **Vitest** for the domain tests
-- Firebase / Cloudflare handle hosting and persistence (not required to run the
-  domain layer or tests locally)
+- **Vitest** — доменные тесты
+- Firebase / Cloudflare — хостинг и хранение (не нужны для локального запуска)
 
-## Getting started
+## Запуск
 
 ```bash
 npm install
-npm run dev        # start the demo app (generate + render a player card)
-npm test           # run the domain tests
-npm run typecheck  # type-check without emitting
+npm run dev        # мастер создания + карточка
+npm test           # доменные тесты
+npm run typecheck  # проверка типов без сборки
+npm run build      # продакшн-сборка
 ```
 
-## Project structure
+## Правила создания (по корбуку ST3001)
+
+### Характеристики
+
+Четыре характеристики: **телосложение**, **ловкость**, **смекалка**, **эмпатия**
+(значение 1–5). При создании сумма значений равна пулу воспитания; каждая — 2–4,
+ключевая характеристика амплуа — до 5.
+
+### Воспитание (таблицы 2.2 и 2.4)
+
+Именно воспитание — а не возраст — задаёт пункты:
+
+| Воспитание | Пункты характеристик | Пункты навыков | Репутация | Богатство |
+| ---------- | -------------------- | -------------- | --------- | --------- |
+| Плебей     | 15 | 8  | 2 | 500 бирр  |
+| Орбитал    | 14 | 10 | 4 | 1000 бирр |
+| Аристократ | 13 | 12 | 6 | 5000 бирр |
+
+Пасынок не может быть аристократом; его репутация уменьшается вдвое, но он
+получает стигму.
+
+### Навыки
+
+16 навыков (8 общих + 8 специальных), значение 0–5. При создании в ключевые
+навыки роли можно вложить до 3, в прочие — по 1.
+
+### Производные показатели
+
+| Показатель | Формула               |
+| ---------- | --------------------- |
+| Здоровье   | телосложение + ловкость |
+| Рассудок   | смекалка + эмпатия    |
+| Нагрузка   | телосложение × 2      |
+
+### Амплуа и роли
+
+11 амплуа (Артист, Сетевой паук, Беглец, Негоциант, Оперативник, Пилот,
+Проповедник, Учёный, Матрос, Солдат, Первопроходец), у каждого — три роли,
+ключевая характеристика, модификатор репутации, достоинства, снаряжение, личные
+проблемы, взаимоотношения, внешность и имена.
+
+### Достоинства
+
+Личное (из амплуа), командное (из амплуа команды) и дар Лика-покровителя. Реестр
+также содержит мистические практики, стигмы, кибернетические имплантаты и
+бионические модификации — с описаниями по корбуку.
+
+## Структура
 
 ```
 src/
-  domain/coriolis/       Framework-agnostic game model
-    attributes.ts        Four core attributes + bounds
-    skills.ts            General & advanced skills, each tied to an attribute
-    icons.ts             The nine birth Icons of the zodiac
-    talents.ts           Extensible talent registry
-    concepts.ts          Character concepts (archetypes) with key attribute/skills
-    character.ts         Character shape + derived stats (HP, MP, encumbrance)
-    generation.ts        Age profiles, point-buy, seeded generator, assessment
-    index.ts             Public API — import from here
-  components/PlayerCard/  Base React player card
-  App.tsx                 Demo shell (generate → render → assess)
+  domain/coriolis/       Модель и правила (не зависят от React)
+    attributes.ts        Четыре характеристики
+    skills.ts            16 навыков и связка с характеристиками
+    upbringing.ts        Воспитание, происхождение, планеты
+    icons.ts             Девять Ликов, дары, таблица d66
+    talents.ts           Реестр достоинств с описаниями
+    concepts.ts          11 амплуа, роли, амплуа команды, должности
+    character.ts         Модель персонажа и производные показатели
+    generation.ts        Пулы, ограничения, генератор, ассесмент, прокачка
+    index.ts             Публичный API
+  components/PlayerCard/  Карточка героя (только чтение + прокачка)
+  components/CharacterBuilder/  Пошаговый мастер
+  App.tsx                 Оболочка: вкладки «Мастер создания» и «Карточка»
 ```
-
-## Domain concepts
-
-### Character
-
-A `Character` stores identity (name, concept, age group, upbringing, birth
-Icon), core scores (attributes, skills, talents), progression (reputation,
-experience, relationships), resources (birr, gear), and live trackers (hit
-points, mind points, radiation).
-
-Derived values are **computed, never stored**, so they cannot drift:
-
-| Derived value      | Formula              |
-| ------------------ | -------------------- |
-| Max hit points     | Strength + Agility   |
-| Max mind points    | Wits + Empathy       |
-| Encumbrance limit  | Strength × 2         |
-
-### Generation
-
-`generateCharacter(input)` produces a complete, rules-valid character from a
-concept, age group, upbringing, and Icon. A seed makes generation
-**deterministic** — the same input always yields the same character, which keeps
-tests reproducible and lets the app offer a "reroll from seed" flow.
-
-Attribute and skill points are distributed by a point-buy allocator that
-respects per-value caps and biases investment toward the concept's key
-attribute and key skills, so generated builds stay coherent.
-
-### Assessment
-
-`assessCharacter(character)` validates a finished build against the generation
-rules and returns a report:
-
-- point pools spent vs. allowed (attributes and skills),
-- a list of `issues`, each an `error` (hard rule break) or `warning` (advisory),
-- a `valid` flag (true when there are no errors).
-
-This is the "character generation assessment" — it powers both the demo output
-and any future character-builder UI.
-
-## Rule constants
-
-The tunable rule numbers (point pools, per-value caps, age profiles, starting
-birr) are collected as named constants in `attributes.ts`, `skills.ts`, and
-`generation.ts`. They reflect a standard human character and are grouped so they
-can be verified against your rulebook printing and adjusted in one place without
-touching logic.

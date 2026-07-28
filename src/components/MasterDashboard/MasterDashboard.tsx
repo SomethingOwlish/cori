@@ -15,7 +15,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { CampaignRepository, CharacterRepository } from "../../data";
 import type { Campaign } from "../../domain/campaign";
-import { CONCEPTS, type Character } from "../../domain/coriolis";
+import { CONCEPTS, raiseSkillWithExperience, type Character } from "../../domain/coriolis";
 import type { Session } from "../../session";
 import { CharacterBuilder } from "../CharacterBuilder";
 import { PlayerCard } from "../PlayerCard";
@@ -142,7 +142,7 @@ export function MasterDashboard({
       <div className="md">
         <div className="md__crumbs">
           <button type="button" className="md__link" onClick={() => setView({ kind: "list" })}>
-            ← All campaigns
+            ← Все кампании
           </button>
         </div>
 
@@ -150,13 +150,12 @@ export function MasterDashboard({
           <div>
             <h2 className="md__camp-name">{campaign.name}</h2>
             <p className="md__camp-meta">
-              GM: {campaign.gmName} · {roster.length} character
-              {roster.length === 1 ? "" : "s"} · {campaign.playerNames.length} player
-              {campaign.playerNames.length === 1 ? "" : "s"}
+              Ведущий: {campaign.gmName} · персонажей: {roster.length} · игроков:{" "}
+              {campaign.playerNames.length}
             </p>
           </div>
-          <div className="md__camp-code" title="Players enter this code to join">
-            <span className="md__camp-code-label">Join code</span>
+          <div className="md__camp-code" title="Игроки вводят этот код, чтобы присоединиться">
+            <span className="md__camp-code-label">Код входа</span>
             <span className="md__camp-code-value">{campaign.joinCode}</span>
           </div>
         </header>
@@ -177,29 +176,29 @@ export function MasterDashboard({
             className="md__primary"
             onClick={() => setView({ kind: "builder", campaignId: campaign.id })}
           >
-            + New character
+            + Новый персонаж
           </button>
         </div>
 
         {roster.length === 0 ? (
           <p className="md__empty">
-            No characters yet. Players who join with the code above will appear here, or create one
-            with “New character”.
+            Персонажей пока нет. Игроки, вошедшие по коду выше, появятся здесь, либо создай персонажа
+            кнопкой «Новый персонаж».
           </p>
         ) : (
           <ul className="md__grid">
             {roster.map((c) => (
               <li key={c.id} className="md__card">
                 <button type="button" className="md__card-main" onClick={() => setViewing(c)}>
-                  <span className="md__card-name">{c.name || "Unnamed"}</span>
+                  <span className="md__card-name">{c.name || "Без имени"}</span>
                   <span className="md__card-concept">{CONCEPTS[c.concept].name}</span>
                   <span className="md__card-player">
-                    {c.playerName ? `Player: ${c.playerName}` : "No player assigned"}
+                    {c.playerName ? `Игрок: ${c.playerName}` : "Игрок не назначен"}
                   </span>
                 </button>
                 <div className="md__card-actions">
                   <button type="button" onClick={() => setViewing(c)}>
-                    View card
+                    Смотреть карточку
                   </button>
                   <button
                     type="button"
@@ -207,7 +206,7 @@ export function MasterDashboard({
                       setView({ kind: "builder", campaignId: campaign.id, character: c })
                     }
                   >
-                    Open in builder
+                    Открыть в редакторе
                   </button>
                 </div>
               </li>
@@ -221,7 +220,7 @@ export function MasterDashboard({
             className="md__danger-btn"
             onClick={() => handleDeleteCampaign(campaign.id)}
           >
-            Delete campaign
+            Удалить кампанию
           </button>
         </div>
 
@@ -230,14 +229,23 @@ export function MasterDashboard({
             className="md__overlay"
             role="dialog"
             aria-modal="true"
-            aria-label={`Player card for ${viewing.name || "unnamed character"}`}
+            aria-label={`Карточка персонажа ${viewing.name || "без имени"}`}
             onClick={() => setViewing(null)}
           >
             <div className="md__overlay-inner" onClick={(e) => e.stopPropagation()}>
               <button type="button" className="md__overlay-close" onClick={() => setViewing(null)}>
                 ✕
               </button>
-              <PlayerCard character={viewing} />
+              {/* Мастер может прокачивать навыки героя прямо на карточке (−5 опыта). */}
+              <PlayerCard
+                character={viewing}
+                canLevelUp
+                onRaiseSkill={(key) => {
+                  const next = raiseSkillWithExperience(viewing, key);
+                  setViewing(next);
+                  void characters.save(next).then(() => refreshRoster(campaign.id));
+                }}
+              />
             </div>
           </div>
         )}
@@ -250,16 +258,16 @@ export function MasterDashboard({
     <div className="md">
       <header className="md__head">
         <div>
-          <h2 className="md__title">Game Master dashboard</h2>
-          <p className="md__welcome">Signed in as {session.name}</p>
+          <h2 className="md__title">Панель ведущего</h2>
+          <p className="md__welcome">Вошёл как {session.name}</p>
         </div>
         <button type="button" className="md__link" onClick={onSignOut}>
-          Sign out
+          Выйти
         </button>
       </header>
 
-      <section className="md__create" aria-label="Create campaign">
-        <h3 className="md__subhead">Create a campaign</h3>
+      <section className="md__create" aria-label="Создать кампанию">
+        <h3 className="md__subhead">Создать кампанию</h3>
         <form
           className="md__create-form"
           onSubmit={(e) => {
@@ -269,19 +277,19 @@ export function MasterDashboard({
         >
           <input
             value={newName}
-            placeholder="Campaign name, e.g. Dawn of the Zenithian Cycle"
+            placeholder="Название кампании, напр. Рассвет Зенитийского Цикла"
             onChange={(e) => setNewName(e.target.value)}
           />
           <button type="submit" className="md__primary" disabled={newName.trim() === ""}>
-            Create
+            Создать
           </button>
         </form>
       </section>
 
-      <section aria-label="Your campaigns">
-        <h3 className="md__subhead">Your campaigns</h3>
+      <section aria-label="Твои кампании">
+        <h3 className="md__subhead">Твои кампании</h3>
         {myCampaigns.length === 0 ? (
-          <p className="md__empty">No campaigns yet. Create your first one above.</p>
+          <p className="md__empty">Кампаний пока нет. Создай первую выше.</p>
         ) : (
           <ul className="md__camp-list">
             {myCampaigns.map((c) => (
@@ -293,8 +301,7 @@ export function MasterDashboard({
                 >
                   <span className="md__camp-item-name">{c.name}</span>
                   <span className="md__camp-item-meta">
-                    Join code {c.joinCode} · {c.playerNames.length} player
-                    {c.playerNames.length === 1 ? "" : "s"}
+                    Код входа {c.joinCode} · игроков: {c.playerNames.length}
                   </span>
                 </button>
               </li>

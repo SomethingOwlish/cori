@@ -1,12 +1,13 @@
 /**
- * Coriolis domain layer — public API.
+ * Доменный слой «Кориолиса» — публичный API.
  *
- * The player card UI and any persistence layer (Firebase, Cloudflare Workers)
- * should import from here rather than reaching into individual modules.
+ * UI карточки и слой хранения должны импортировать отсюда, а не лезть в
+ * отдельные модули.
  */
 
 export * from "./attributes";
 export * from "./skills";
+export * from "./upbringing";
 export * from "./icons";
 export * from "./talents";
 export * from "./concepts";

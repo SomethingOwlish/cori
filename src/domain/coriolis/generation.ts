@@ -1,112 +1,97 @@
 /**
- * Character generation and assessment.
+ * Создание и оценка (ассесмент) персонажа.
  *
- * This module owns the *rules* of building a Coriolis character:
- *   - how many attribute and skill points are available,
- *   - the caps that apply at creation,
- *   - a deterministic random generator, and
- *   - an "assessment" pass that validates a finished build against the rules.
+ * Здесь живут ПРАВИЛА сборки героя «Кориолиса»:
+ *   - сколько пунктов характеристик и навыков доступно (зависит от воспитания);
+ *   - какие ограничения действуют при создании;
+ *   - детерминированный генератор случайного героя;
+ *   - «ассесмент» — проверка готовой сборки на соответствие правилам;
+ *   - прокачка (трата пунктов опыта).
  *
- * The point pools and caps below are the tunable rule constants. They reflect a
- * standard human character and are grouped here so they can be checked against
- * the rulebook printing in one place and adjusted without touching logic.
+ * Источник: ST3001 «Кориолис», гл. 2 (стр. 21–27), гл. 4 (стр. 28).
  */
 
 import {
   ATTRIBUTE_KEYS,
   ATTRIBUTE_MAX,
   ATTRIBUTE_MIN,
+  ATTRIBUTES,
   KEY_ATTRIBUTE_MAX,
   baseAttributeScores,
   type AttributeKey,
   type AttributeScores,
 } from "./attributes";
 import {
+  SKILLS,
   SKILL_KEYS,
+  SKILL_MAX,
   SKILL_MIN,
   baseSkillScores,
   type SkillKey,
   type SkillScores,
 } from "./skills";
-import { CONCEPTS, type ConceptKey } from "./concepts";
-import { ICON_KEYS, type IconKey } from "./icons";
+import {
+  CONCEPTS,
+  CONCEPT_KEYS,
+  TEAM_ARCHETYPES,
+  TEAM_ARCHETYPE_KEYS,
+  findRole,
+  type ConceptKey,
+  type TeamArchetypeKey,
+} from "./concepts";
+import { iconForD66Roll, type IconKey } from "./icons";
+import { UPBRINGINGS, UPBRINGING_KEYS, type Upbringing, type Parentage } from "./upbringing";
+import { TALENTS } from "./talents";
 import {
   attributePointsSpent,
   createBlankCharacter,
   maxHitPoints,
   maxMindPoints,
-  type AgeGroup,
   type Character,
-  type Upbringing,
 } from "./character";
 
-/** Points a player distributes across attributes, on top of the minimum. */
-export const ATTRIBUTE_POINT_POOL = 6;
+// Ограничения на этапе создания.
+/** Максимум ключевого навыка роли при создании. */
+export const KEY_SKILL_CREATION_MAX = 3;
+/** Максимум прочих навыков при создании. */
+export const OTHER_SKILL_CREATION_MAX = 1;
+/** Стоимость одного улучшения при прокачке (пункты опыта). */
+export const EXPERIENCE_PER_ADVANCE = 5;
 
-/** Per-age-group generation profile. */
-export interface AgeProfile {
-  ageGroup: AgeGroup;
-  label: string;
-  /** Total skill points to distribute. */
-  skillPoints: number;
-  /** Highest value any single skill may reach at creation. */
-  maxSkillValue: number;
-  /** Number of starting talents. */
-  talentCount: number;
-  /** Starting reputation score. */
-  startingReputation: number;
+/** Итоговая базовая репутация: воспитание (пасынок вдвое) + модификатор амплуа. */
+export function startingReputation(
+  upbringing: Upbringing,
+  parentage: Parentage,
+  concept: ConceptKey,
+): number {
+  let base = UPBRINGINGS[upbringing].reputation;
+  if (parentage === "stray") base = Math.floor(base / 2);
+  return Math.max(0, base + CONCEPTS[concept].reputationModifier);
 }
 
-/**
- * Age profiles. Older characters trade physical peak for more skill points,
- * talents, and reputation — the classic Year Zero tradeoff.
- */
-export const AGE_PROFILES: Record<AgeGroup, AgeProfile> = {
-  young: {
-    ageGroup: "young",
-    label: "Young",
-    skillPoints: 8,
-    maxSkillValue: 3,
-    talentCount: 1,
-    startingReputation: 2,
-  },
-  middleAged: {
-    ageGroup: "middleAged",
-    label: "Middle-aged",
-    skillPoints: 10,
-    maxSkillValue: 4,
-    talentCount: 2,
-    startingReputation: 3,
-  },
-  old: {
-    ageGroup: "old",
-    label: "Old",
-    skillPoints: 12,
-    maxSkillValue: 5,
-    talentCount: 3,
-    startingReputation: 4,
-  },
-};
+/** Максимум характеристики при создании: ключевая — 5, остальные — 4. */
+export function attributeCreationCap(concept: ConceptKey, key: AttributeKey): number {
+  return key === CONCEPTS[concept].keyAttribute ? KEY_ATTRIBUTE_MAX : ATTRIBUTE_MAX;
+}
 
-export const UPBRINGINGS: readonly Upbringing[] = ["plebeian", "stationary", "privileged"];
+/** Множество ключевых навыков выбранной роли. */
+export function keySkillsOf(concept: ConceptKey, role: string): Set<SkillKey> {
+  const r = findRole(concept, role);
+  return new Set(r ? r.keySkills : []);
+}
 
-/** Starting money (birr) by upbringing. */
-export const UPBRINGING_BIRR: Record<Upbringing, number> = {
-  plebeian: 1_000,
-  stationary: 2_000,
-  privileged: 4_000,
-};
+/** Максимум навыка при создании: ключевой роли — 3, остальные — 1. */
+export function skillCreationCap(concept: ConceptKey, role: string, key: SkillKey): number {
+  return keySkillsOf(concept, role).has(key) ? KEY_SKILL_CREATION_MAX : OTHER_SKILL_CREATION_MAX;
+}
 
 // ---------------------------------------------------------------------------
-// Deterministic RNG (mulberry32) — reproducible generation from a seed.
+// Детерминированный ГПСЧ (mulberry32) — воспроизводимая генерация по семени.
 // ---------------------------------------------------------------------------
 
 export interface Rng {
-  /** Float in [0, 1). */
   next(): number;
-  /** Integer in [min, max] inclusive. */
   int(min: number, max: number): number;
-  /** Random element of a non-empty array. */
   pick<T>(items: readonly T[]): T;
 }
 
@@ -126,36 +111,40 @@ export function createRng(seed: number): Rng {
   };
 }
 
+/** Бросок d66 (два d6): 11..66. */
+export function rollD66(rng: Rng): number {
+  return rng.int(1, 6) * 10 + rng.int(1, 6);
+}
+
 // ---------------------------------------------------------------------------
-// Allocation helpers
+// Распределение пунктов
 // ---------------------------------------------------------------------------
 
 /**
- * Distributes `pool` points across the four attributes, respecting the min/max
- * bounds and letting the key attribute reach `KEY_ATTRIBUTE_MAX`. Points are
- * biased toward the key attribute first, then spread randomly.
+ * Распределяет пункты характеристик так, что сумма четырёх значений равна
+ * `pool` (по воспитанию), каждое значение 2..4, а ключевая — до 5. Приоритет
+ * отдаётся ключевой характеристике.
  */
 export function allocateAttributes(
-  keyAttribute: AttributeKey,
+  concept: ConceptKey,
+  pool: number,
   rng: Rng,
-  pool: number = ATTRIBUTE_POINT_POOL,
 ): AttributeScores {
   const scores = baseAttributeScores();
-  let remaining = pool;
+  const keyAttr = CONCEPTS[concept].keyAttribute;
+  let remaining = pool - attributePointsSpent(scores); // pool минус стартовые 8
 
-  const capFor = (key: AttributeKey) =>
-    key === keyAttribute ? KEY_ATTRIBUTE_MAX : ATTRIBUTE_MAX;
-
-  // Prioritise the key attribute a little.
-  while (remaining > 0 && scores[keyAttribute] < capFor(keyAttribute) && rng.next() < 0.75) {
-    scores[keyAttribute] += 1;
+  // Сначала немного вкладываем в ключевую характеристику.
+  while (remaining > 0 && scores[keyAttr] < KEY_ATTRIBUTE_MAX && rng.next() < 0.75) {
+    scores[keyAttr] += 1;
     remaining -= 1;
   }
 
-  // Spread the rest across attributes that still have room.
   let guard = 1000;
   while (remaining > 0 && guard-- > 0) {
-    const candidates = ATTRIBUTE_KEYS.filter((k) => scores[k] < capFor(k));
+    const candidates = ATTRIBUTE_KEYS.filter(
+      (k) => scores[k] < attributeCreationCap(concept, k),
+    );
     if (candidates.length === 0) break;
     const key = rng.pick(candidates);
     scores[key] += 1;
@@ -166,20 +155,21 @@ export function allocateAttributes(
 }
 
 /**
- * Distributes `profile.skillPoints` across skills, favouring the concept's key
- * skills. No skill exceeds `profile.maxSkillValue`.
+ * Распределяет пункты навыков (по воспитанию), отдавая приоритет ключевым
+ * навыкам роли. Ключевые навыки — до 3, прочие — до 1.
  */
 export function allocateSkills(
   concept: ConceptKey,
-  profile: AgeProfile,
+  role: string,
+  pool: number,
   rng: Rng,
 ): SkillScores {
   const scores = baseSkillScores();
-  let remaining = profile.skillPoints;
-  const keySkills = CONCEPTS[concept].keySkills;
+  const keySkills = [...keySkillsOf(concept, role)];
+  let remaining = pool;
 
   const raise = (key: SkillKey) => {
-    if (scores[key] < profile.maxSkillValue && remaining > 0) {
+    if (scores[key] < skillCreationCap(concept, role, key) && remaining > 0) {
       scores[key] += 1;
       remaining -= 1;
       return true;
@@ -187,29 +177,32 @@ export function allocateSkills(
     return false;
   };
 
-  // Invest in key skills first.
+  // Сначала вкладываем в ключевые навыки роли.
   for (const key of keySkills) {
-    const target = Math.min(profile.maxSkillValue, rng.int(1, profile.maxSkillValue));
-    while (scores[key] < target) {
-      if (!raise(key)) break;
+    const target = rng.int(1, KEY_SKILL_CREATION_MAX);
+    while (scores[key] < target && raise(key)) {
+      /* поднимаем до цели */
     }
   }
 
-  // Spread the remainder across any skill.
+  // Остаток раскидываем по любым навыкам с оставшимся запасом.
   let guard = 1000;
   while (remaining > 0 && guard-- > 0) {
-    const candidates = SKILL_KEYS.filter((k) => scores[k] < profile.maxSkillValue);
+    const candidates = SKILL_KEYS.filter(
+      (k) => scores[k] < skillCreationCap(concept, role, k),
+    );
     if (candidates.length === 0) break;
-    // Weight toward key skills so builds stay coherent.
-    const pool = rng.next() < 0.5 ? keySkills : candidates;
-    raise(rng.pick(pool.length ? pool : candidates));
+    const pref = rng.next() < 0.6 && keySkills.some((k) => scores[k] < KEY_SKILL_CREATION_MAX)
+      ? keySkills
+      : candidates;
+    raise(rng.pick(pref.length ? pref : candidates));
   }
 
   return scores;
 }
 
 // ---------------------------------------------------------------------------
-// Generation
+// Генерация
 // ---------------------------------------------------------------------------
 
 export interface GenerationInput {
@@ -217,45 +210,63 @@ export interface GenerationInput {
   seed: number;
   name?: string;
   playerName?: string;
-  /** If omitted, a concept is chosen at random. */
   concept?: ConceptKey;
-  ageGroup?: AgeGroup;
+  role?: string;
   upbringing?: Upbringing;
-  /** If omitted, a birth Icon is chosen at random. */
+  parentage?: Parentage;
   icon?: IconKey;
+  teamArchetype?: TeamArchetypeKey;
 }
 
 /**
- * Produces a complete, rules-valid character from the given input. The same
- * seed and input always yield the same character.
+ * Производит полного, соответствующего правилам персонажа. Одинаковые семя и
+ * вход всегда дают одного и того же героя.
  */
 export function generateCharacter(input: GenerationInput): Character {
   const rng = createRng(input.seed);
 
-  const concept: ConceptKey = input.concept ?? rng.pick(Object.keys(CONCEPTS) as ConceptKey[]);
-  const ageGroup: AgeGroup = input.ageGroup ?? rng.pick(["young", "middleAged", "old"] as AgeGroup[]);
-  const upbringing: Upbringing = input.upbringing ?? rng.pick(UPBRINGINGS);
-  const icon: IconKey = input.icon ?? rng.pick(ICON_KEYS);
-  const profile = AGE_PROFILES[ageGroup];
-  const conceptDef = CONCEPTS[concept];
+  const concept: ConceptKey = input.concept ?? rng.pick(CONCEPT_KEYS);
+  const role: string = input.role ?? rng.pick(CONCEPTS[concept].roles).key;
+  const parentage: Parentage = input.parentage ?? (rng.next() < 0.85 ? "human" : "stray");
+  // Пасынок не может быть аристократом.
+  let upbringing: Upbringing =
+    input.upbringing ?? rng.pick(UPBRINGING_KEYS);
+  if (parentage === "stray" && upbringing === "privileged") upbringing = "stationary";
 
-  const attributes = allocateAttributes(conceptDef.keyAttribute, rng);
-  const skills = allocateSkills(concept, profile, rng);
+  const icon: IconKey = input.icon ?? iconForD66Roll(rollD66(rng));
+  const teamArchetype: TeamArchetypeKey = input.teamArchetype ?? rng.pick(TEAM_ARCHETYPE_KEYS);
+  const profile = UPBRINGINGS[upbringing];
 
-  const talents = conceptDef.suggestedTalents.slice(0, profile.talentCount);
+  const attributes = allocateAttributes(concept, profile.attributePoints, rng);
+  const skills = allocateSkills(concept, role, profile.skillPoints, rng);
+
+  // Достоинства: личное (из амплуа) + командное (из амплуа команды) + стигма (пасынок).
+  const talents: string[] = [
+    rng.pick(CONCEPTS[concept].talentChoices),
+    rng.pick(TEAM_ARCHETYPES[teamArchetype].talentChoices),
+  ];
+  if (parentage === "stray") {
+    talents.push(rng.pick(["underwaterBreathingStigma", "resilience", "pheromones"]));
+  }
 
   const character = createBlankCharacter(input.id);
-  character.name = input.name ?? "";
+  character.name = input.name ?? rng.pick(CONCEPTS[concept].names);
   character.playerName = input.playerName;
+  character.biography = { upbringing, parentage };
   character.concept = concept;
-  character.ageGroup = ageGroup;
-  character.upbringing = upbringing;
+  character.role = role;
   character.icon = icon;
   character.attributes = attributes;
   character.skills = skills;
   character.talents = talents;
-  character.reputation = profile.startingReputation;
-  character.birr = UPBRINGING_BIRR[upbringing];
+  character.teamArchetype = teamArchetype;
+  character.reputation = startingReputation(upbringing, parentage, concept);
+  character.birr = profile.birr;
+  character.appearance = [
+    rng.pick(CONCEPTS[concept].appearanceFace),
+    rng.pick(CONCEPTS[concept].appearanceClothing),
+  ].join(", ");
+  character.personalProblem = rng.pick(CONCEPTS[concept].personalProblems);
   character.hitPointsCurrent = maxHitPoints(attributes);
   character.mindPointsCurrent = maxMindPoints(attributes);
 
@@ -263,15 +274,14 @@ export function generateCharacter(input: GenerationInput): Character {
 }
 
 // ---------------------------------------------------------------------------
-// Assessment — validate a finished build against the generation rules.
+// Ассесмент — проверка готовой сборки на соответствие правилам.
 // ---------------------------------------------------------------------------
 
 export type IssueSeverity = "error" | "warning";
 
 export interface AssessmentIssue {
   severity: IssueSeverity;
-  /** Which part of the sheet the issue concerns. */
-  area: "attributes" | "skills" | "talents" | "derived";
+  area: "attributes" | "skills" | "talents" | "derived" | "biography";
   message: string;
 }
 
@@ -285,105 +295,146 @@ export interface CharacterAssessment {
 }
 
 /**
- * Assesses a character build: checks point pools, per-value caps, and talent
- * counts against the age profile. Hard rule breaks are `error`s; advisory
- * observations are `warning`s. A build is `valid` when it has no errors.
+ * Оценивает сборку: пулы пунктов, ограничения на значения, достоинства и
+ * производные показатели. Жёсткие нарушения — `error`, советы — `warning`.
+ * Сборка `valid`, если в ней нет ошибок.
  */
 export function assessCharacter(character: Character): CharacterAssessment {
   const issues: AssessmentIssue[] = [];
-  const profile = AGE_PROFILES[character.ageGroup];
-  const conceptDef = CONCEPTS[character.concept];
-  const keyAttribute = conceptDef.keyAttribute;
+  const { upbringing, parentage } = character.biography;
+  const profile = UPBRINGINGS[upbringing];
+  const concept = character.concept;
 
-  // --- Attributes ---
+  // Биография: пасынок не может быть аристократом.
+  if (parentage === "stray" && upbringing === "privileged") {
+    issues.push({
+      severity: "error",
+      area: "biography",
+      message: "Пасынок по воспитанию может быть только плебеем или орбиталом.",
+    });
+  }
+
+  // Характеристики: сумма значений равна пулу воспитания.
   const attrSpent = attributePointsSpent(character.attributes);
-  if (attrSpent !== ATTRIBUTE_POINT_POOL) {
+  if (attrSpent !== profile.attributePoints) {
     issues.push({
       severity: "error",
       area: "attributes",
-      message: `Attribute points spent (${attrSpent}) must equal ${ATTRIBUTE_POINT_POOL}.`,
+      message: `Сумма характеристик (${attrSpent}) должна равняться ${profile.attributePoints} для воспитания «${profile.name}».`,
     });
   }
   for (const key of ATTRIBUTE_KEYS) {
     const value = character.attributes[key];
-    const max = key === keyAttribute ? KEY_ATTRIBUTE_MAX : ATTRIBUTE_MAX;
+    const max = attributeCreationCap(concept, key);
     if (value < ATTRIBUTE_MIN) {
-      issues.push({
-        severity: "error",
-        area: "attributes",
-        message: `${key} is below the minimum of ${ATTRIBUTE_MIN}.`,
-      });
+      issues.push({ severity: "error", area: "attributes", message: `${ATTRIBUTES[key].name}: значение ${value} ниже минимума ${ATTRIBUTE_MIN}.` });
     }
     if (value > max) {
-      issues.push({
-        severity: "error",
-        area: "attributes",
-        message: `${key} is above its maximum of ${max}.`,
-      });
+      issues.push({ severity: "error", area: "attributes", message: `${ATTRIBUTES[key].name}: значение ${value} выше максимума ${max}.` });
     }
   }
 
-  // --- Skills ---
+  // Навыки: общий пул и ограничения на ключевые/прочие навыки.
   let skillSpent = 0;
   for (const key of SKILL_KEYS) {
     const value = character.skills[key];
     skillSpent += value;
+    const max = skillCreationCap(concept, character.role, key);
     if (value < SKILL_MIN) {
-      issues.push({
-        severity: "error",
-        area: "skills",
-        message: `${key} is below the minimum of ${SKILL_MIN}.`,
-      });
+      issues.push({ severity: "error", area: "skills", message: `${SKILLS[key].name}: значение ${value} ниже минимума ${SKILL_MIN}.` });
     }
-    if (value > profile.maxSkillValue) {
-      issues.push({
-        severity: "error",
-        area: "skills",
-        message: `${key} (${value}) exceeds the ${profile.label} cap of ${profile.maxSkillValue}.`,
-      });
+    if (value > max) {
+      const kind = max === KEY_SKILL_CREATION_MAX ? "ключевого" : "неключевого";
+      issues.push({ severity: "error", area: "skills", message: `${SKILLS[key].name} (${value}) превышает предел ${kind} навыка при создании (${max}).` });
     }
   }
   if (skillSpent !== profile.skillPoints) {
     issues.push({
       severity: "error",
       area: "skills",
-      message: `Skill points spent (${skillSpent}) must equal ${profile.skillPoints} for a ${profile.label} character.`,
+      message: `Сумма навыков (${skillSpent}) должна равняться ${profile.skillPoints} для воспитания «${profile.name}».`,
     });
   }
 
-  // --- Talents ---
-  if (character.talents.length !== profile.talentCount) {
-    issues.push({
-      severity: "warning",
-      area: "talents",
-      message: `Expected ${profile.talentCount} starting talent(s) for a ${profile.label} character, found ${character.talents.length}.`,
-    });
+  // Достоинства: личное из амплуа, командное из амплуа команды, стигма у пасынка.
+  const conceptChoices = new Set(CONCEPTS[concept].talentChoices);
+  const hasPersonal = character.talents.some((t) => conceptChoices.has(t));
+  if (!hasPersonal) {
+    issues.push({ severity: "warning", area: "talents", message: "Не выбрано личное достоинство из списка амплуа." });
+  }
+  if (character.teamArchetype) {
+    const teamChoices = new Set(TEAM_ARCHETYPES[character.teamArchetype].talentChoices);
+    if (!character.talents.some((t) => teamChoices.has(t))) {
+      issues.push({ severity: "warning", area: "talents", message: "Не выбрано достоинство команды из списка амплуа команды." });
+    }
+  }
+  if (parentage === "stray") {
+    const hasStigma = character.talents.some((t) => TALENTS[t]?.kind === "stigma");
+    if (!hasStigma) {
+      issues.push({ severity: "warning", area: "talents", message: "Пасынок должен получить стигму." });
+    }
+  }
+  // Мистик обязан взять мистическую практику.
+  if (character.role === "mystic" && !character.talents.some((t) => TALENTS[t]?.kind === "mystic")) {
+    issues.push({ severity: "warning", area: "talents", message: "Мистик обязан взять мистическую практику как личное достоинство." });
   }
 
-  // --- Derived trackers ---
+  // Производные показатели.
   const hpMax = maxHitPoints(character.attributes);
   const mpMax = maxMindPoints(character.attributes);
   if (character.hitPointsCurrent > hpMax) {
-    issues.push({
-      severity: "warning",
-      area: "derived",
-      message: `Current hit points (${character.hitPointsCurrent}) exceed the maximum of ${hpMax}.`,
-    });
+    issues.push({ severity: "warning", area: "derived", message: `Текущее здоровье (${character.hitPointsCurrent}) превышает максимум ${hpMax}.` });
   }
   if (character.mindPointsCurrent > mpMax) {
-    issues.push({
-      severity: "warning",
-      area: "derived",
-      message: `Current mind points (${character.mindPointsCurrent}) exceed the maximum of ${mpMax}.`,
-    });
+    issues.push({ severity: "warning", area: "derived", message: `Текущий рассудок (${character.mindPointsCurrent}) превышает максимум ${mpMax}.` });
   }
 
   return {
     valid: issues.every((i) => i.severity !== "error"),
     attributePointsSpent: attrSpent,
-    attributePointsAllowed: ATTRIBUTE_POINT_POOL,
+    attributePointsAllowed: profile.attributePoints,
     skillPointsSpent: skillSpent,
     skillPointsAllowed: profile.skillPoints,
     issues,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Прокачка — трата пунктов опыта (5 → +1 навык или новое достоинство).
+// ---------------------------------------------------------------------------
+
+/** Можно ли поднять навык на прокачке (есть опыт и значение < 5). */
+export function canRaiseSkill(character: Character, key: SkillKey): boolean {
+  return character.experience >= EXPERIENCE_PER_ADVANCE && character.skills[key] < SKILL_MAX;
+}
+
+/** Поднимает навык на 1 за 5 пунктов опыта. Возвращает нового персонажа (или того же, если нельзя). */
+export function raiseSkillWithExperience(character: Character, key: SkillKey): Character {
+  if (!canRaiseSkill(character, key)) return character;
+  return {
+    ...character,
+    experience: character.experience - EXPERIENCE_PER_ADVANCE,
+    skills: { ...character.skills, [key]: character.skills[key] + 1 },
+  };
+}
+
+/** Можно ли приобрести достоинство за опыт (есть опыт, ещё не куплено, не стигма). */
+export function canAcquireTalent(character: Character, key: string): boolean {
+  const t = TALENTS[key];
+  return (
+    character.experience >= EXPERIENCE_PER_ADVANCE &&
+    !!t &&
+    t.kind !== "stigma" &&
+    !character.talents.includes(key)
+  );
+}
+
+/** Приобретает достоинство за 5 пунктов опыта. */
+export function acquireTalentWithExperience(character: Character, key: string): Character {
+  if (!canAcquireTalent(character, key)) return character;
+  return {
+    ...character,
+    experience: character.experience - EXPERIENCE_PER_ADVANCE,
+    talents: [...character.talents, key],
   };
 }
