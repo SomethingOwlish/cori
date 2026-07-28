@@ -45,6 +45,25 @@ export interface CharacterBuilderProps {
   repository: CharacterRepository;
   /** Character to edit on mount. Defaults to a fresh seeded generation. */
   initialCharacter?: Character;
+  /**
+   * Campaign this builder is scoped to. When set, freshly generated characters
+   * are tagged with it and the "Saved characters" list only shows this
+   * campaign's roster.
+   */
+  campaignId?: string;
+  /** Player name to pre-fill on new characters (used by the player flow). */
+  defaultPlayerName?: string;
+  /** Rendered as a "← Back" control when provided (e.g. return to dashboard). */
+  onBack?: () => void;
+}
+
+/** Applies the current campaign/player scope to a freshly generated character. */
+function scoped(character: Character, campaignId?: string, playerName?: string): Character {
+  return {
+    ...character,
+    ...(campaignId !== undefined ? { campaignId } : {}),
+    ...(playerName && !character.playerName ? { playerName } : {}),
+  };
 }
 
 /** Best-effort unique id for freshly created characters. */
@@ -57,11 +76,22 @@ function newId(): string {
 
 type SaveState = "idle" | "saving" | "saved" | "error";
 
-export function CharacterBuilder({ repository, initialCharacter }: CharacterBuilderProps) {
+export function CharacterBuilder({
+  repository,
+  initialCharacter,
+  campaignId,
+  defaultPlayerName,
+  onBack,
+}: CharacterBuilderProps) {
   const [seed, setSeed] = useState(1);
   const [character, dispatch] = useReducer(
     builderReducer,
-    initialCharacter ?? generateCharacter({ id: newId(), seed: 1, name: "New Character" }),
+    initialCharacter ??
+      scoped(
+        generateCharacter({ id: newId(), seed: 1, name: "New Character" }),
+        campaignId,
+        defaultPlayerName,
+      ),
   );
 
   const [saved, setSaved] = useState<Character[]>([]);
@@ -71,9 +101,11 @@ export function CharacterBuilder({ repository, initialCharacter }: CharacterBuil
 
   const refreshList = useCallback(async () => {
     const all = await repository.list();
-    all.sort((a, b) => (a.name || a.id).localeCompare(b.name || b.id));
-    setSaved(all);
-  }, [repository]);
+    const scopedList =
+      campaignId !== undefined ? all.filter((c) => c.campaignId === campaignId) : all;
+    scopedList.sort((a, b) => (a.name || a.id).localeCompare(b.name || b.id));
+    setSaved(scopedList);
+  }, [repository, campaignId]);
 
   useEffect(() => {
     void refreshList();
@@ -89,7 +121,11 @@ export function CharacterBuilder({ repository, initialCharacter }: CharacterBuil
   const handleNew = () => {
     dispatch({
       type: "load",
-      character: generateCharacter({ id: newId(), seed, name: "New Character" }),
+      character: scoped(
+        generateCharacter({ id: newId(), seed, name: "New Character" }),
+        campaignId,
+        defaultPlayerName,
+      ),
     });
     setSaveState("idle");
   };
@@ -116,7 +152,14 @@ export function CharacterBuilder({ repository, initialCharacter }: CharacterBuil
   return (
     <div className="cb">
       <div className="cb__editor">
-        <h2 className="cb__title">Character Builder</h2>
+        <div className="cb__titlebar">
+          {onBack && (
+            <button type="button" className="cb__back" onClick={onBack}>
+              ← Back
+            </button>
+          )}
+          <h2 className="cb__title">Character Builder</h2>
+        </div>
 
         <div className="cb__actions">
           <button type="button" onClick={handleReroll}>

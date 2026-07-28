@@ -36,6 +36,7 @@ export interface CharacterDocument {
 
   name: string;
   playerName?: string;
+  campaignId?: string;
 
   concept: ConceptKey;
   ageGroup: AgeGroup;
@@ -90,6 +91,7 @@ export function characterToDocument(character: Character): CharacterDocument {
 
   // Only include optional string fields when set — Firestore rejects `undefined`.
   if (character.playerName !== undefined) doc.playerName = character.playerName;
+  if (character.campaignId !== undefined) doc.campaignId = character.campaignId;
   if (character.appearance !== undefined) doc.appearance = character.appearance;
   if (character.personalProblem !== undefined) doc.personalProblem = character.personalProblem;
 
@@ -129,6 +131,7 @@ export function documentToCharacter(id: string, raw: CharacterDocument): Charact
   };
 
   if (doc.playerName !== undefined) character.playerName = doc.playerName;
+  if (doc.campaignId !== undefined) character.campaignId = doc.campaignId;
   if (doc.appearance !== undefined) character.appearance = doc.appearance;
   if (doc.personalProblem !== undefined) character.personalProblem = doc.personalProblem;
 

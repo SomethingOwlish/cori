@@ -61,13 +61,16 @@ export function builderReducer(character: Character, action: BuilderAction): Cha
       return action.character;
 
     case "reroll":
-      // Preserve id and identity text; reroll everything the seed drives.
-      return generateCharacter({
-        id: character.id,
-        seed: action.seed,
-        name: character.name,
-        playerName: character.playerName,
-      });
+      // Preserve id, identity text, and campaign; reroll everything the seed drives.
+      return {
+        ...generateCharacter({
+          id: character.id,
+          seed: action.seed,
+          name: character.name,
+          playerName: character.playerName,
+        }),
+        campaignId: character.campaignId,
+      };
 
     case "setText": {
       const value = action.value;
