@@ -6,6 +6,10 @@
  *   - Game Master  → MasterDashboard (create campaigns, view every character)
  *   - Player       → PlayerHome (join by code, pick a campaign, build a character)
  *
+ * Once signed in, a nav switches between the role home (кампании), the shared
+ * Codex справочник, and the «Третий Горизонт» star map. All three are open to
+ * both the GM and players (the map and codex adapt what's editable to the role).
+ *
  * Campaigns and characters persist to Firestore when Firebase is configured
  * (`VITE_FIREBASE_*`), so a Game Master's campaign and its roster are visible to
  * players joining by code from any other device. When Firebase is not
@@ -14,6 +18,7 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
+import { Codex } from "./components/Codex";
 import { Login } from "./components/Login";
 import { MasterDashboard } from "./components/MasterDashboard";
 import { PlayerHome } from "./components/PlayerHome";
@@ -22,15 +27,18 @@ import {
   ensureSignedIn,
   FirestoreCampaignRepository,
   FirestoreCharacterRepository,
+  FirestoreCodexRepository,
   FirestoreThirdHorizonRepository,
   getFirestoreDb,
   LocalStorageCampaignRepository,
   LocalStorageCharacterRepository,
+  LocalStorageCodexRepository,
   LocalStorageThirdHorizonRepository,
   readFirebaseConfigFromEnv,
   signInWithGoogle,
   type CampaignRepository,
   type CharacterRepository,
+  type CodexRepository,
   type ThirdHorizonRepository,
 } from "./data";
 import { clearSession, loadSession, saveSession, type Session } from "./session";
@@ -39,6 +47,7 @@ import "./App.css";
 interface Repositories {
   characters: CharacterRepository;
   campaigns: CampaignRepository;
+  codex: CodexRepository;
   thirdHorizon: ThirdHorizonRepository;
 }
 
@@ -53,7 +62,7 @@ function isFirebaseConfigured(): boolean {
 }
 
 /**
- * Builds the repository pair for the app's lifetime. Prefers the shared
+ * Builds the repository set for the app's lifetime. Prefers the shared
  * Firestore backend; if Firebase is not configured (`getFirestoreDb` throws on
  * missing `VITE_FIREBASE_*` env), falls back to per-browser localStorage so the
  * app still runs locally. The fallback is logged, not silent, because on a
@@ -65,6 +74,7 @@ function createRepositories(): Repositories {
     return {
       characters: new FirestoreCharacterRepository(db),
       campaigns: new FirestoreCampaignRepository(db),
+      codex: new FirestoreCodexRepository(db),
       thirdHorizon: new FirestoreThirdHorizonRepository(db),
     };
   } catch (error) {
@@ -76,19 +86,19 @@ function createRepositories(): Repositories {
     return {
       characters: new LocalStorageCharacterRepository(),
       campaigns: new LocalStorageCampaignRepository(),
+      codex: new LocalStorageCodexRepository(),
       thirdHorizon: new LocalStorageThirdHorizonRepository(),
     };
   }
 }
 
-/** Top-level destination after sign-in: the role dashboard or the shared atlas. */
-type View = "home" | "atlas";
+/** Top-level destination once signed in. */
+type Page = "home" | "codex" | "atlas";
 
 export function App() {
   // One repository instance each for the app's lifetime.
-  const { characters, campaigns, thirdHorizon } = useMemo(createRepositories, []);
+  const { characters, campaigns, codex, thirdHorizon } = useMemo(createRepositories, []);
   const firebaseEnabled = useMemo(isFirebaseConfigured, []);
-  const [view, setView] = useState<View>("home");
 
   // Firestore's rules require an authenticated client. When Firebase is
   // configured we sign in anonymously on load and hold the authenticated UI back
@@ -112,6 +122,9 @@ export function App() {
   }, [firebaseEnabled]);
 
   const [session, setSession] = useState<Session | null>(() => loadSession());
+  // Three destinations once signed in: the role home (кампании), the shared
+  // Codex, and the «Третий Горизонт» map. Both the GM and players see all three.
+  const [page, setPage] = useState<Page>("home");
 
   const handleSignIn = (next: Session) => {
     saveSession(next);
@@ -154,23 +167,33 @@ export function App() {
           <nav className="app__nav" aria-label="Разделы">
             <button
               type="button"
-              className={`app__nav-tab${view === "home" ? " app__nav-tab--active" : ""}`}
-              aria-current={view === "home"}
-              onClick={() => setView("home")}
+              className={`app__nav-link${page === "home" ? " app__nav-link--active" : ""}`}
+              aria-current={page === "home"}
+              onClick={() => setPage("home")}
             >
-              {session.role === "gm" ? "Кабинет ведущего" : "Мои кампании"}
+              {session.role === "gm" ? "Панель ведущего" : "Кампании"}
             </button>
             <button
               type="button"
-              className={`app__nav-tab${view === "atlas" ? " app__nav-tab--active" : ""}`}
-              aria-current={view === "atlas"}
-              onClick={() => setView("atlas")}
+              className={`app__nav-link${page === "codex" ? " app__nav-link--active" : ""}`}
+              aria-current={page === "codex"}
+              onClick={() => setPage("codex")}
+            >
+              Кодекс
+            </button>
+            <button
+              type="button"
+              className={`app__nav-link${page === "atlas" ? " app__nav-link--active" : ""}`}
+              aria-current={page === "atlas"}
+              onClick={() => setPage("atlas")}
             >
               Третий Горизонт
             </button>
           </nav>
 
-          {view === "atlas" ? (
+          {page === "codex" ? (
+            <Codex codex={codex} />
+          ) : page === "atlas" ? (
             <ThirdHorizonPage
               repository={thirdHorizon}
               editMode={session.role === "gm" ? "master" : "player"}

@@ -1,0 +1,314 @@
+/* Codex — layout for the shared reference page. Colours come from tokens.css. */
+
+.cdx {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.cdx__head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.cdx__title {
+  margin: 4px 0 2px;
+}
+
+.cdx__sub {
+  margin: 0;
+  color: var(--sand-dim);
+  max-width: 60ch;
+}
+
+/* Tabs */
+.cdx__tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 8px;
+}
+
+.cdx__tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 13px;
+  border-radius: var(--radius-pill);
+  background: var(--hull-3);
+  border: 1px solid var(--line-soft);
+  color: var(--sand);
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.cdx__tab--active {
+  background: var(--gold-12);
+  border-color: var(--border-gold);
+  color: var(--gold-bright);
+}
+
+.cdx__tab-count {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: var(--radius-pill);
+  background: var(--void);
+  color: var(--sand-dim);
+}
+
+.cdx__tab--active .cdx__tab-count {
+  color: var(--gold-bright);
+}
+
+/* Filters */
+.cdx__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.cdx__check {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--sand);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.cdx__check input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--gold);
+}
+
+.cdx__count {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--sand-dim);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.cdx__reset {
+  background: none;
+  border: none;
+  color: var(--gold);
+  cursor: pointer;
+  font: inherit;
+  text-transform: none;
+  letter-spacing: 0;
+  text-decoration: underline;
+}
+
+.cdx__empty {
+  color: var(--sand-dim);
+  padding: 24px 0;
+  text-align: center;
+}
+
+/* Results grid */
+.cdx__grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 14px;
+}
+
+.cdx__card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.cdx__card-titles {
+  display: flex;
+  gap: 10px;
+  min-width: 0;
+}
+
+.cdx__card-cat {
+  font-size: 18px;
+  line-height: 1.2;
+  color: var(--gold);
+}
+
+.cdx__card-name {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ivory);
+  line-height: 1.25;
+}
+
+.cdx__card-group {
+  font-size: 11px;
+  color: var(--sand-dim);
+  margin-top: 2px;
+}
+
+.cdx__card-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  justify-content: flex-end;
+}
+
+.cdx__stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 12px 0;
+}
+
+.cdx__stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 52px;
+  padding: 6px 8px;
+  background: var(--void);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-sm);
+}
+
+.cdx__stat-label {
+  font-family: var(--font-display);
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--sand-dim);
+  text-align: center;
+}
+
+.cdx__stat-value {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  color: var(--gold-bright);
+  text-align: center;
+}
+
+.cdx__card-summary {
+  margin: 10px 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--sand);
+}
+
+.cdx__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.cdx__card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 4px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line-soft);
+}
+
+.cdx__card-meta {
+  display: flex;
+  gap: 12px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+.cdx__price {
+  color: var(--gold-bright);
+}
+
+.cdx__weight {
+  color: var(--sand-dim);
+}
+
+.cdx__delete {
+  background: none;
+  border: 1px solid var(--line-soft);
+  color: var(--garnet);
+  border-radius: var(--radius-sm);
+  padding: 5px 12px;
+  font-family: var(--font-display);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+}
+
+.cdx__delete:hover {
+  border-color: var(--garnet);
+}
+
+/* Add-entry form */
+.cdx__form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.cdx__form-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.cdx__form-block-label {
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--sand-dim);
+  margin-bottom: 8px;
+}
+
+.cdx__stat-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.cdx__stat-remove {
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line-soft);
+  background: var(--hull-3);
+  color: var(--sand);
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+}
+
+@media (max-width: 520px) {
+  .cdx__grid {
+    grid-template-columns: 1fr;
+  }
+}

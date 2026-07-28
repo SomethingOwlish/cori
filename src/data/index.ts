@@ -17,6 +17,10 @@ export { LocalStorageCampaignRepository } from "./localStorageCampaignRepository
 export type { ThirdHorizonRepository } from "./thirdHorizonRepository";
 export { LocalStorageThirdHorizonRepository } from "./localStorageThirdHorizonRepository";
 
+// Codex persistence (user-added entries)
+export type { CodexRepository } from "./codexRepository";
+export { LocalStorageCodexRepository } from "./localStorageCodexRepository";
+
 // Firestore implementation
 export {
   characterToDocument,
@@ -34,6 +38,7 @@ export {
 export { FirestoreCharacterRepository } from "./firestore/firestoreCharacterRepository";
 export { FirestoreCampaignRepository } from "./firestore/firestoreCampaignRepository";
 export { FirestoreThirdHorizonRepository } from "./firestore/firestoreThirdHorizonRepository";
+export { FirestoreCodexRepository } from "./firestore/firestoreCodexRepository";
 export {
   getFirebaseAuth,
   ensureSignedIn,
