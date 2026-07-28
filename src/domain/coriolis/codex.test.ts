@@ -9,9 +9,27 @@ import {
 } from "./codex";
 
 describe("встроенный каталог кодекса", () => {
-  it("содержит записи всех шести типов", () => {
+  it("содержит записи всех типов, включая корабли", () => {
     const counts = countByCategory(BUILTIN_CODEX);
     for (const c of CODEX_CATEGORIES) expect(counts[c]).toBeGreaterThan(0);
+    expect(counts.ship).toBeGreaterThan(0);
+  });
+
+  it("раскладывает корабли по подтипам «Корабль · …»", () => {
+    const groups = groupsForCategory(BUILTIN_CODEX, "ship");
+    expect(groups).toContain("Корабль · Достоинства");
+    expect(groups).toContain("Корабль · Модули");
+    expect(groups).toContain("Корабль · Орудия");
+  });
+
+  it("включает материалы кампаний: практики Резонанса и артефакты", () => {
+    const mystic = groupsForCategory(BUILTIN_CODEX, "mysticPower");
+    expect(mystic).toContain("Практики Резонанса (Эмиссар)");
+    const ulunga = BUILTIN_CODEX.find((e) => e.name === "Стрела Улунга");
+    expect(ulunga?.category).toBe("weapon");
+    expect(ulunga?.tags).toContain("Игнорирует броню");
+    const artifacts = searchCodex(BUILTIN_CODEX, { text: "артефакт" });
+    expect(artifacts.length).toBeGreaterThan(0);
   });
 
   it("даёт уникальные id всем записям", () => {

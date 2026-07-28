@@ -13,6 +13,8 @@
  */
 
 import { ICONS, ICON_KEYS } from "./icons";
+import { CAMPAIGN_CODEX } from "./codexCampaigns";
+import { SHIP_CODEX } from "./codexShips";
 import { TALENTS, TALENT_KEYS, type TalentKind } from "./talents";
 
 /** Типы записей кодекса. */
@@ -22,7 +24,8 @@ export type CodexCategory =
   | "explosive" // гранаты и взрывчатка
   | "gear" // предметы снаряжения
   | "talent" // достоинства (включая имплантаты, дары Ликов, стигмы)
-  | "mysticPower"; // мистические силы (практики)
+  | "mysticPower" // мистические силы (практики)
+  | "ship"; // космические корабли (достоинства, модули, орудия, изъяны, типы)
 
 export const CODEX_CATEGORIES: readonly CodexCategory[] = [
   "weapon",
@@ -31,6 +34,7 @@ export const CODEX_CATEGORIES: readonly CodexCategory[] = [
   "gear",
   "talent",
   "mysticPower",
+  "ship",
 ];
 
 /** Человекочитаемые названия типов (единственное / множественное число). */
@@ -41,6 +45,7 @@ export const CATEGORY_LABELS: Record<CodexCategory, { one: string; many: string;
   gear: { one: "Предмет", many: "Предметы", icon: "⚙" },
   talent: { one: "Достоинство", many: "Достоинства", icon: "★" },
   mysticPower: { one: "Мистическая сила", many: "Мистические силы", icon: "☾" },
+  ship: { one: "Корабль", many: "Корабли", icon: "🚀" },
 };
 
 /** Уровень технологии: архаичный / современный / передовой / засекреченный. */
@@ -571,6 +576,8 @@ export const BUILTIN_CODEX: readonly CodexEntry[] = [
   ...TALENTS_AS_CODEX,
   ...ICON_GIFTS_AS_CODEX,
   ...MYSTIC_POWERS,
+  ...SHIP_CODEX,
+  ...CAMPAIGN_CODEX,
 ];
 
 /** Число встроенных записей по типам — для бейджей на вкладках. */
