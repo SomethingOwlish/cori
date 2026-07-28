@@ -39,6 +39,8 @@ export interface Character {
   id: string;
   name: string;
   playerName?: string;
+  /** Id of the campaign this character belongs to, if any. */
+  campaignId?: string;
 
   // Identity
   concept: ConceptKey;

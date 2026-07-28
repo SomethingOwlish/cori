@@ -32,9 +32,29 @@
   min-width: 0;
 }
 
+.cb__titlebar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
 .cb__title {
   margin: 0;
   font-size: 1.4rem;
+}
+
+.cb__back {
+  background: transparent;
+  border: 1px solid var(--cb-border);
+  color: var(--cb-muted);
+  border-radius: 0.4rem;
+  padding: 0.3rem 0.6rem;
+  cursor: pointer;
+}
+
+.cb__back:hover {
+  color: #e6e9ef;
+  border-color: var(--cb-accent);
 }
 
 .cb__actions {

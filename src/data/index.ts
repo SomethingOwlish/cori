@@ -7,6 +7,11 @@
 
 export type { CharacterRepository, Unsubscribe } from "./characterRepository";
 export { InMemoryCharacterRepository } from "./inMemoryCharacterRepository";
+export { LocalStorageCharacterRepository } from "./localStorageCharacterRepository";
+
+// Campaign persistence
+export type { CampaignRepository } from "./campaignRepository";
+export { LocalStorageCampaignRepository } from "./localStorageCampaignRepository";
 
 // Firestore implementation
 export {
