@@ -1,0 +1,23 @@
+rules_version = '2';
+
+// Firestore security rules for Cori.
+//
+// Every client authenticates with Firebase before touching Firestore: the app
+// signs in anonymously on load, or with Google from the login screen. These
+// rules therefore require an authenticated request but do not (yet) restrict
+// which authenticated user may read or write a given campaign/character — a
+// player must be able to look a campaign up by its join code across the whole
+// collection, and any joined player may edit their character.
+//
+// Next hardening step (needs owner fields on the documents): restrict campaign
+// writes to its GM, and character writes to that character's player or GM.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /campaigns/{campaignId} {
+      allow read, write: if request.auth != null;
+    }
+    match /characters/{characterId} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}

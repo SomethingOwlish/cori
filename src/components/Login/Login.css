@@ -127,3 +127,45 @@
   opacity: 0.45;
   cursor: not-allowed;
 }
+
+.login__google {
+  padding: 0.7rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 0.55rem;
+  background: #0d1017;
+  color: #e6e9ef;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.login__google:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+
+.login__google:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.login__error {
+  margin: 0;
+  color: #e06c6c;
+  font-size: 0.85rem;
+}
+
+.login__divider {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.login__divider::before,
+.login__divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}

@@ -1,11 +1,16 @@
 /**
  * Login — the entry screen.
  *
- * Local play has no accounts or passwords: you simply say who you are and pick a
- * role. A Game Master lands on a dashboard where they create and manage
- * campaigns; a Player lands on a screen that lists the campaigns they've joined
- * and lets them join new ones by code. The choice is remembered across reloads
- * via the session (see `src/session.ts`).
+ * You say who you are and pick a role: a Game Master lands on a dashboard where
+ * they create and manage campaigns; a Player lands on a screen that lists the
+ * campaigns they've joined and lets them join new ones by code. The choice is
+ * remembered across reloads via the session (see `src/session.ts`).
+ *
+ * When Firebase is configured, `onGoogleSignIn` is provided and a "Sign in with
+ * Google" button appears; using it authenticates the client and pre-fills the
+ * name from the Google profile. The name + role are still confirmed here before
+ * entering, so the gameplay identity stays the same regardless of how you
+ * authenticate.
  */
 
 import { useState } from "react";
@@ -14,11 +19,15 @@ import "./Login.css";
 
 export interface LoginProps {
   onSignIn: (session: Session) => void;
+  /** Signs in with Google, resolving to the display name (or null). */
+  onGoogleSignIn?: () => Promise<string | null>;
 }
 
-export function Login({ onSignIn }: LoginProps) {
+export function Login({ onSignIn, onGoogleSignIn }: LoginProps) {
   const [name, setName] = useState("");
   const [role, setRole] = useState<Role>("gm");
+  const [googleBusy, setGoogleBusy] = useState(false);
+  const [googleError, setGoogleError] = useState<string | null>(null);
 
   const trimmed = name.trim();
   const canSubmit = trimmed !== "";
@@ -26,6 +35,21 @@ export function Login({ onSignIn }: LoginProps) {
   const submit = () => {
     if (!canSubmit) return;
     onSignIn({ name: trimmed, role });
+  };
+
+  const handleGoogle = async () => {
+    if (!onGoogleSignIn) return;
+    setGoogleError(null);
+    setGoogleBusy(true);
+    try {
+      const displayName = await onGoogleSignIn();
+      if (displayName) setName(displayName);
+    } catch (error) {
+      console.error("Вход через Google не удался.", error);
+      setGoogleError("Не удалось войти через Google. Попробуй ещё раз.");
+    } finally {
+      setGoogleBusy(false);
+    }
   };
 
   return (
@@ -39,6 +63,23 @@ export function Login({ onSignIn }: LoginProps) {
       >
         <h2 className="login__title">Добро пожаловать в Cori</h2>
         <p className="login__sub">Войди в Третий Горизонт. Выбери, кто ты.</p>
+
+        {onGoogleSignIn && (
+          <>
+            <button
+              type="button"
+              className="login__google"
+              onClick={() => void handleGoogle()}
+              disabled={googleBusy}
+            >
+              {googleBusy ? "Вход…" : "Войти через Google"}
+            </button>
+            {googleError && <p className="login__error">{googleError}</p>}
+            <div className="login__divider">
+              <span>или по имени</span>
+            </div>
+          </>
+        )}
 
         <label className="login__field">
           <span>Твоё имя</span>

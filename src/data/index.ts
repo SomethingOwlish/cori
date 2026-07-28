@@ -28,3 +28,11 @@ export {
   type FirebaseConfig,
 } from "./firestore/firebaseApp";
 export { FirestoreCharacterRepository } from "./firestore/firestoreCharacterRepository";
+export { FirestoreCampaignRepository } from "./firestore/firestoreCampaignRepository";
+export {
+  getFirebaseAuth,
+  ensureSignedIn,
+  signInWithGoogle,
+  watchAuth,
+  resetFirebaseAuthForTesting,
+} from "./firestore/firebaseAuth";

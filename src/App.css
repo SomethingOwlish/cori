@@ -51,6 +51,12 @@ body {
   font-size: 0.9rem;
 }
 
+.app__loading {
+  color: var(--muted);
+  padding: 3rem 1rem;
+  text-align: center;
+}
+
 .app__tabs {
   display: flex;
   gap: 0.5rem;
