@@ -13,6 +13,10 @@ export { LocalStorageCharacterRepository } from "./localStorageCharacterReposito
 export type { CampaignRepository } from "./campaignRepository";
 export { LocalStorageCampaignRepository } from "./localStorageCampaignRepository";
 
+// Third Horizon atlas persistence
+export type { ThirdHorizonRepository } from "./thirdHorizonRepository";
+export { LocalStorageThirdHorizonRepository } from "./localStorageThirdHorizonRepository";
+
 // Codex persistence (user-added entries)
 export type { CodexRepository } from "./codexRepository";
 export { LocalStorageCodexRepository } from "./localStorageCodexRepository";
@@ -33,6 +37,7 @@ export {
 } from "./firestore/firebaseApp";
 export { FirestoreCharacterRepository } from "./firestore/firestoreCharacterRepository";
 export { FirestoreCampaignRepository } from "./firestore/firestoreCampaignRepository";
+export { FirestoreThirdHorizonRepository } from "./firestore/firestoreThirdHorizonRepository";
 export { FirestoreCodexRepository } from "./firestore/firestoreCodexRepository";
 export {
   getFirebaseAuth,
