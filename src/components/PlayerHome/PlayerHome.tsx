@@ -10,19 +10,23 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { CampaignRepository, CharacterRepository } from "../../data";
+import type { CampaignRepository, CharacterRepository, ShipRepository } from "../../data";
 import { addPlayer, hasPlayer, type Campaign } from "../../domain/campaign";
-import type { Character } from "../../domain/coriolis";
+import { assessShip, type Character } from "../../domain/coriolis";
 import type { Session } from "../../session";
 import { CharacterBuilder } from "../CharacterBuilder";
 import { PlayerCard } from "../PlayerCard";
 import { Button, Card, Input } from "../../design-system";
 import "./PlayerHome.css";
 
+const money = (n: number) => new Intl.NumberFormat("ru-RU").format(n);
+
 export interface PlayerHomeProps {
   session: Session;
   campaigns: CampaignRepository;
   characters: CharacterRepository;
+  ships: ShipRepository;
+  onOpenShip: (campaignId: string) => void;
   onSignOut: () => void;
   /**
    * С каким экраном открыться. `"card"` (по «Карточка персонажа» из меню) сразу
@@ -36,6 +40,8 @@ export function PlayerHome({
   session,
   campaigns,
   characters,
+  ships,
+  onOpenShip,
   onSignOut,
   initialView = "campaigns",
 }: PlayerHomeProps) {
@@ -45,6 +51,7 @@ export function PlayerHome({
   const [activeCampaignId, setActiveCampaignId] = useState<string | null>(null);
   const [myChar, setMyChar] = useState<Character | null>(null);
   const [charLoaded, setCharLoaded] = useState(false);
+  const [shipDebt, setShipDebt] = useState<number | null>(null);
 
   const refresh = useCallback(async () => {
     setAll(await campaigns.list());
@@ -95,6 +102,23 @@ export function PlayerHome({
     }
   }, [activeCampaignId, loadMyChar]);
 
+  // Load the active ship's debt for the open campaign.
+  useEffect(() => {
+    if (!activeCampaignId) {
+      setShipDebt(null);
+      return;
+    }
+    let cancelled = false;
+    void ships.listByCampaign(activeCampaignId).then((list) => {
+      if (cancelled) return;
+      const active = list.find((s) => !s.archived);
+      setShipDebt(active ? assessShip(active).debt : null);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [activeCampaignId, ships]);
+
   const handleJoin = async () => {
     const entered = code.trim().toUpperCase();
     if (!entered) return;
@@ -121,6 +145,10 @@ export function PlayerHome({
           ← К кампаниям
         </Button>
         <span className="ph__crumb-name">{activeCampaign.name}</span>
+        {shipDebt !== null && <span className="ph__crumb-debt">Долг: {money(shipDebt)} б.</span>}
+        <Button variant="ghost" size="sm" onClick={() => onOpenShip(activeCampaign.id)}>
+          🚀 Корабль
+        </Button>
       </div>
     );
 

@@ -23,22 +23,27 @@ import { Login } from "./components/Login";
 import { MasterDashboard } from "./components/MasterDashboard";
 import { PlayerHome } from "./components/PlayerHome";
 import { ThirdHorizonPage } from "./components/ThirdHorizon";
+import { ShipPage } from "./components/Ship";
+import { hasPlayer, type Campaign } from "./domain/campaign";
 import {
   ensureSignedIn,
   FirestoreCampaignRepository,
   FirestoreCharacterRepository,
   FirestoreCodexRepository,
+  FirestoreShipRepository,
   FirestoreThirdHorizonRepository,
   getFirestoreDb,
   LocalStorageCampaignRepository,
   LocalStorageCharacterRepository,
   LocalStorageCodexRepository,
+  LocalStorageShipRepository,
   LocalStorageThirdHorizonRepository,
   readFirebaseConfigFromEnv,
   signInWithGoogle,
   type CampaignRepository,
   type CharacterRepository,
   type CodexRepository,
+  type ShipRepository,
   type ThirdHorizonRepository,
 } from "./data";
 import { clearSession, loadSession, saveSession, type Session } from "./session";
@@ -49,6 +54,7 @@ interface Repositories {
   campaigns: CampaignRepository;
   codex: CodexRepository;
   thirdHorizon: ThirdHorizonRepository;
+  ships: ShipRepository;
 }
 
 /** True when the `VITE_FIREBASE_*` env is fully configured for this build. */
@@ -76,6 +82,7 @@ function createRepositories(): Repositories {
       campaigns: new FirestoreCampaignRepository(db),
       codex: new FirestoreCodexRepository(db),
       thirdHorizon: new FirestoreThirdHorizonRepository(db),
+      ships: new FirestoreShipRepository(db),
     };
   } catch (error) {
     console.warn(
@@ -88,16 +95,17 @@ function createRepositories(): Repositories {
       campaigns: new LocalStorageCampaignRepository(),
       codex: new LocalStorageCodexRepository(),
       thirdHorizon: new LocalStorageThirdHorizonRepository(),
+      ships: new LocalStorageShipRepository(),
     };
   }
 }
 
 /** Top-level destination once signed in. */
-type Page = "home" | "codex" | "atlas";
+type Page = "home" | "codex" | "atlas" | "ship";
 
 export function App() {
   // One repository instance each for the app's lifetime.
-  const { characters, campaigns, codex, thirdHorizon } = useMemo(createRepositories, []);
+  const { characters, campaigns, codex, thirdHorizon, ships } = useMemo(createRepositories, []);
   const firebaseEnabled = useMemo(isFirebaseConfigured, []);
 
   // Firestore's rules require an authenticated client. When Firebase is
@@ -133,6 +141,10 @@ export function App() {
     view: "campaigns",
     nonce: 0,
   });
+  // Campaigns the signed-in user belongs to — used to resolve the campaign-bound
+  // ship page (reachable from the global menu) and to show the ship's debt.
+  const [myCampaigns, setMyCampaigns] = useState<Campaign[]>([]);
+  const [shipCampaignId, setShipCampaignId] = useState<string | null>(null);
   // Collapsible nav. Remember the last open/closed choice across reloads.
   const [menuOpen, setMenuOpen] = useState<boolean>(() => {
     try {
@@ -158,6 +170,34 @@ export function App() {
   const goHome = (view: "campaigns" | "card") => {
     setHomeIntent((prev) => ({ view, nonce: prev.nonce + 1 }));
     setPage("home");
+  };
+
+  // Load the user's campaigns once signed in, to resolve the ship page's
+  // campaign and default to the most recent one.
+  useEffect(() => {
+    if (!authReady || !session) return;
+    let cancelled = false;
+    void campaigns.list().then((all) => {
+      if (cancelled) return;
+      const mine = all
+        .filter((c) =>
+          session.role === "gm"
+            ? c.gmName.toLowerCase() === session.name.toLowerCase()
+            : hasPlayer(c, session.name),
+        )
+        .sort((a, b) => b.createdAt - a.createdAt);
+      setMyCampaigns(mine);
+      setShipCampaignId((prev) => prev ?? mine[0]?.id ?? null);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [authReady, session, campaigns, page]);
+
+  // Open the campaign-bound ship page (from the global menu or a campaign view).
+  const openShip = (campaignId?: string) => {
+    if (campaignId) setShipCampaignId(campaignId);
+    setPage("ship");
   };
 
   const handleSignIn = (next: Session) => {
@@ -236,6 +276,14 @@ export function App() {
                 >
                   Третий Горизонт
                 </button>
+                <button
+                  type="button"
+                  className={`app__nav-link${page === "ship" ? " app__nav-link--active" : ""}`}
+                  aria-current={page === "ship"}
+                  onClick={() => openShip()}
+                >
+                  Корабль
+                </button>
               </div>
             </div>
 
@@ -268,11 +316,24 @@ export function App() {
               repository={thirdHorizon}
               editMode={session.role === "gm" ? "master" : "player"}
             />
+          ) : page === "ship" ? (
+            <ShipPage
+              repository={ships}
+              codex={codex}
+              campaignId={shipCampaignId}
+              campaignName={myCampaigns.find((c) => c.id === shipCampaignId)?.name}
+              campaignOptions={myCampaigns.map((c) => ({ id: c.id, name: c.name }))}
+              onSelectCampaign={setShipCampaignId}
+              role={session.role}
+              currentUserName={session.name}
+            />
           ) : session.role === "gm" ? (
             <MasterDashboard
               session={session}
               campaigns={campaigns}
               characters={characters}
+              ships={ships}
+              onOpenShip={openShip}
               onSignOut={handleSignOut}
             />
           ) : (
@@ -281,6 +342,8 @@ export function App() {
               session={session}
               campaigns={campaigns}
               characters={characters}
+              ships={ships}
+              onOpenShip={openShip}
               onSignOut={handleSignOut}
               initialView={homeIntent.view}
             />

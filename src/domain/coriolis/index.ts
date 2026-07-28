@@ -11,6 +11,8 @@ export * from "./upbringing";
 export * from "./icons";
 export * from "./talents";
 export * from "./codex";
+export * from "./codexShips";
+export * from "./ship";
 export * from "./concepts";
 export * from "./character";
 export * from "./generation";
