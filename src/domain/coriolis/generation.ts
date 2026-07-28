@@ -262,11 +262,14 @@ export function generateCharacter(input: GenerationInput): Character {
   character.teamArchetype = teamArchetype;
   character.reputation = startingReputation(upbringing, parentage, concept);
   character.birr = profile.birr;
-  character.appearance = [
-    rng.pick(CONCEPTS[concept].appearanceFace),
-    rng.pick(CONCEPTS[concept].appearanceClothing),
-  ].join(", ");
+  const face = rng.pick(CONCEPTS[concept].appearanceFace);
+  const clothing = rng.pick(CONCEPTS[concept].appearanceClothing);
+  character.appearanceFace = face;
+  character.appearanceClothing = clothing;
+  character.appearance = [face, clothing].join(", ");
   character.personalProblem = rng.pick(CONCEPTS[concept].personalProblems);
+  // Начальное снаряжение — по одному предмету из каждой строки амплуа.
+  character.gear = CONCEPTS[concept].gear.map((row) => ({ name: rng.pick(row) }));
   character.hitPointsCurrent = maxHitPoints(attributes);
   character.mindPointsCurrent = maxMindPoints(attributes);
 

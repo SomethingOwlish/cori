@@ -1,0 +1,191 @@
+/* ============================================================================
+   Coriolis Design System — design tokens.
+   Direction: "Illuminated" — teal-navy void, warm gold leaf, ivory ink.
+   An old-Arabic manuscript lit by starlight.
+
+   This file is the single source of truth for the brand's colors, type,
+   spacing, and effects. It is copied verbatim from the shipped design system
+   (styles.css + tokens/*.css) so the app and the design system stay in lockstep.
+   Link/import this once at the app root (see main.tsx).
+   ============================================================================ */
+
+/* ---- Webfonts (Google Fonts CDN; self-host to replace) -------------------- */
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=Spline+Sans:wght@400;500;600;700&family=Spline+Sans+Mono:wght@400;500;600&family=Amiri:ital,wght@0,400;0,700;1,400&display=swap');
+
+:root {
+  /* ---- Base: void & surfaces (deep teal-navy) ---- */
+  --void:        #08171c; /* deepest background, the black of space */
+  --deep:        #0d2229; /* app background */
+  --hull:        #123039; /* raised panel / card */
+  --hull-2:      #16333a; /* elevated card / header band */
+  --hull-3:      #1c4049; /* hover raise, inset wells */
+  --line:        #2a4a52; /* hairline borders on dark */
+  --line-soft:   #1e3a42; /* faint dividers */
+
+  /* ---- Gold leaf (primary accent) ---- */
+  --gold-12:     #2a2011; /* gold tint fill on dark */
+  --gold-30:     #6b5326;
+  --gold:        #c4965a; /* PRIMARY gold */
+  --gold-bright: #d8b06a; /* highlight / hover */
+  --gold-deep:   #b98f4e; /* pressed / gradient bottom */
+  --gold-ink:    #241705; /* text on gold surfaces */
+
+  /* ---- Astral cyan (secondary / links / HUD) ---- */
+  --astral:      #6fd3d8;
+  --astral-dim:  #4a9ba0;
+  --astral-12:   #11292b;
+
+  /* ---- Ink (text on dark) — warm ivory ---- */
+  --ivory:       #f3ead6; /* primary text */
+  --parchment:   #e2d6bd; /* strong secondary */
+  --sand:        #c3b291; /* muted text */
+  --sand-dim:    #9f8f70; /* faint / placeholder */
+  --sand-faint:  #7f7457; /* disabled / hint */
+
+  /* ---- Semantic hues (jewel-toned) ---- */
+  --verdant:     #7bae74; /* success / alive */
+  --verdant-12:  #16281a;
+  --amber:       #d8a13c; /* warning / caution */
+  --amber-12:    #2c2210;
+  --garnet:      #d4605a; /* danger / wounded */
+  --garnet-12:   #2c1614;
+  --lapis:       #6fa8d8; /* info / lore */
+  --lapis-12:    #12212c;
+
+  /* ---- Semantic aliases (use these in UI) ---- */
+  --bg-app:        var(--deep);
+  --bg-void:       var(--void);
+  --surface-card:  var(--hull);
+  --surface-raise: var(--hull-2);
+  --surface-well:  var(--void);
+  --surface-hover: var(--hull-3);
+
+  --border:        var(--line);
+  --border-soft:   var(--line-soft);
+  --border-gold:   rgba(196,150,90,0.38);
+  --border-focus:  var(--gold-bright);
+
+  --text-primary:   var(--ivory);
+  --text-secondary: var(--sand);
+  --text-muted:     var(--sand-dim);
+  --text-disabled:  var(--sand-faint);
+  --text-on-gold:   var(--gold-ink);
+  --text-link:      var(--astral);
+
+  --accent:         var(--gold);
+  --accent-hover:   var(--gold-bright);
+  --accent-press:   var(--gold-deep);
+
+  --success: var(--verdant);
+  --warning: var(--amber);
+  --danger:  var(--garnet);
+  --info:    var(--lapis);
+
+  /* ---- Type families ---- */
+  --font-display: 'Cinzel', 'Cormorant Garamond', serif;      /* section titles, wordmark, epic labels */
+  --font-serif:   'Cormorant Garamond', Georgia, serif;        /* pull-quotes, in-world flavor, subheads */
+  --font-body:    'Spline Sans', system-ui, sans-serif;        /* all UI text, forms, paragraphs */
+  --font-mono:    'Spline Sans Mono', ui-monospace, monospace; /* stats, dice, IDs, coordinates */
+  --font-arabic:  'Amiri', serif;                              /* Arabic script accents only */
+
+  /* ---- Type scale (px) ---- */
+  --fs-display-xl: 52px; /* hero wordmark */
+  --fs-display-l:  38px; /* screen titles */
+  --fs-display-m:  27px; /* section headers */
+  --fs-display-s:  20px; /* card titles (display) */
+  --fs-xl: 22px;
+  --fs-lg: 18px;
+  --fs-md: 15px; /* body default */
+  --fs-sm: 13px;
+  --fs-xs: 11px; /* labels, eyebrows */
+
+  /* ---- Weights ---- */
+  --fw-regular: 400;
+  --fw-medium:  500;
+  --fw-semibold:600;
+  --fw-bold:    700;
+
+  /* ---- Line heights ---- */
+  --lh-tight:   1.15;
+  --lh-snug:    1.35;
+  --lh-normal:  1.55;
+  --lh-relaxed: 1.7;
+
+  /* ---- Letter spacing ---- */
+  --ls-display: 0.06em;
+  --ls-eyebrow: 0.16em;
+  --ls-wide:    0.10em;
+  --ls-normal:  0;
+
+  /* ---- Spacing (4px grid) ---- */
+  --space-0:  0;
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+
+  --gap-inline:  var(--space-2);
+  --gap-tight:   var(--space-3);
+  --gap-card:    var(--space-4);
+  --gap-panel:   var(--space-6);
+  --gap-section: var(--space-12);
+
+  --container-app:   1280px;
+  --container-read:  720px;
+  --sidebar-w:       248px;
+  --header-h:        60px;
+
+  /* ---- Corner radii (restrained — engraved, not bubbly) ---- */
+  --radius-xs:  3px;
+  --radius-sm:  5px;
+  --radius-md:  8px;
+  --radius-lg:  12px;
+  --radius-pill: 999px;
+
+  /* ---- Border widths ---- */
+  --border-w:      1px;
+  --border-w-2:    2px;
+
+  /* ---- Shadows (deep space, soft) ---- */
+  --shadow-sm:  0 1px 2px rgba(0,0,0,0.4);
+  --shadow-md:  0 8px 24px rgba(0,0,0,0.4);
+  --shadow-lg:  0 24px 60px rgba(0,0,0,0.5);
+  --shadow-xl:  0 40px 90px rgba(0,0,0,0.6);
+
+  --inner-gilt: inset 0 0 30px rgba(196,150,90,0.08);
+  --inner-line: inset 0 1px 0 rgba(255,255,255,0.04);
+  --gloss-gold: 0 6px 16px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.35);
+  --ring-gold:  0 0 0 3px rgba(196,150,90,0.30);
+  --ring-astral:0 0 0 3px rgba(111,211,216,0.28);
+  --glow-gold:  0 0 22px rgba(196,150,90,0.30);
+
+  /* ---- Motion ---- */
+  --ease-out:   cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out:cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-fast:   120ms;
+  --dur-med:    220ms;
+  --dur-slow:   400ms;
+
+  /* ---- Signature motifs (reusable backgrounds) ---- */
+  --motif-girih:
+    conic-gradient(from 45deg at 50% 50%,
+      rgba(196,150,90,0.055) 0 25%, transparent 0 50%,
+      rgba(196,150,90,0.055) 0 75%, transparent 0);
+  --motif-girih-size: 44px 44px;
+
+  --motif-stars:
+    radial-gradient(1px 1px at 20% 30%, rgba(243,234,214,0.55), transparent),
+    radial-gradient(1px 1px at 70% 60%, rgba(243,234,214,0.4), transparent),
+    radial-gradient(1.4px 1.4px at 45% 80%, rgba(243,234,214,0.5), transparent),
+    radial-gradient(1px 1px at 85% 22%, rgba(243,234,214,0.4), transparent);
+
+  --motif-rule:
+    repeating-linear-gradient(90deg, transparent 0 20px, rgba(196,150,90,0.10) 20px 22px);
+}

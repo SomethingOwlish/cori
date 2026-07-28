@@ -1,0 +1,125 @@
+/* ============================================================================
+   Coriolis Design System — base layer.
+   Global resets, the illuminated star-chart background, typographic defaults,
+   and a handful of reusable brand primitives (wordmark, eyebrow, flavor line,
+   girih / starfield / rule motif surfaces).
+   ============================================================================ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--bg-app);
+  /* Never flat black: a radial teal glow from the top + faint starfield dust. */
+  background-image:
+    radial-gradient(1100px 640px at 18% -10%, rgba(196, 150, 90, 0.10), transparent 70%),
+    var(--motif-stars);
+  background-attachment: fixed;
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: var(--fs-md);
+  line-height: var(--lh-normal);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+a {
+  color: var(--text-link);
+  text-decoration: none;
+  transition: color var(--dur-fast) var(--ease-out);
+}
+a:hover { color: var(--astral); text-decoration: underline; }
+
+:focus-visible {
+  outline: none;
+  box-shadow: var(--ring-gold);
+  border-radius: var(--radius-sm);
+}
+
+::selection {
+  background: rgba(196, 150, 90, 0.30);
+  color: var(--ivory);
+}
+
+/* Themed scrollbars for the dark manuscript surfaces. */
+* {
+  scrollbar-color: var(--hull-3) transparent;
+  scrollbar-width: thin;
+}
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-thumb {
+  background: var(--hull-3);
+  border-radius: var(--radius-pill);
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+/* ---- Brand primitives ----------------------------------------------------- */
+
+/* Wordmark: Cinzel caps, wide tracking, gold. */
+.crl-wordmark {
+  font-family: var(--font-display);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-display);
+  color: var(--gold);
+  text-transform: uppercase;
+}
+
+/* Eyebrow: small uppercase Cinzel label above a title. */
+.crl-eyebrow {
+  font-family: var(--font-display);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-eyebrow);
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+/* Section / screen title. */
+.crl-title {
+  font-family: var(--font-display);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-display);
+  color: var(--ivory);
+  margin: 0;
+}
+
+/* In-world flavor pull-quote: italic Cormorant. Keep to one line. */
+.crl-flavor {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: var(--fs-lg);
+  color: var(--sand);
+  margin: 0;
+}
+
+/* Arabic script accent (decorative only). */
+.crl-arabic {
+  font-family: var(--font-arabic);
+  color: var(--astral);
+}
+
+/* Monospace data readout. */
+.crl-mono { font-family: var(--font-mono); }
+
+/* Motif surfaces — apply to hero/header bands. */
+.crl-girih {
+  background-image: var(--motif-girih);
+  background-size: var(--motif-girih-size);
+}
+.crl-stars { background-image: var(--motif-stars); }
+.crl-rule {
+  height: 2px;
+  background-image: var(--motif-rule);
+  border: none;
+  margin: 0;
+}
