@@ -125,6 +125,40 @@ export function App() {
   // Three destinations once signed in: the role home (кампании), the shared
   // Codex, and the «Третий Горизонт» map. Both the GM and players see all three.
   const [page, setPage] = useState<Page>("home");
+  // Which flavour of the home page to open. Players get two menu entries into it:
+  // «Кампании» (the list) and «Карточка персонажа» (jump straight to their card).
+  // The nonce forces PlayerHome to remount so the chosen `initialView` re-applies
+  // even when we are already on the home page.
+  const [homeIntent, setHomeIntent] = useState<{ view: "campaigns" | "card"; nonce: number }>({
+    view: "campaigns",
+    nonce: 0,
+  });
+  // Collapsible nav. Remember the last open/closed choice across reloads.
+  const [menuOpen, setMenuOpen] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem("cori.menu.open") !== "0";
+    } catch {
+      return true;
+    }
+  });
+
+  const toggleMenu = () => {
+    setMenuOpen((open) => {
+      const next = !open;
+      try {
+        localStorage.setItem("cori.menu.open", next ? "1" : "0");
+      } catch {
+        // ignore — приватный режим и т.п.
+      }
+      return next;
+    });
+  };
+
+  // Navigate home with a chosen view; bump the nonce so PlayerHome remounts.
+  const goHome = (view: "campaigns" | "card") => {
+    setHomeIntent((prev) => ({ view, nonce: prev.nonce + 1 }));
+    setPage("home");
+  };
 
   const handleSignIn = (next: Session) => {
     saveSession(next);
@@ -156,6 +190,69 @@ export function App() {
         <span className="app__mark crl-arabic" aria-hidden>
           كوريوليس
         </span>
+
+        {authReady && session && (
+          <nav className="app__nav" aria-label="Разделы">
+            <div
+              id="app-menu"
+              className={`app__nav-items${menuOpen ? " app__nav-items--open" : ""}`}
+            >
+              <div className="app__nav-list">
+                {session.role === "player" && (
+                  <button
+                    type="button"
+                    className={`app__nav-link${
+                      page === "home" && homeIntent.view === "card" ? " app__nav-link--active" : ""
+                    }`}
+                    aria-current={page === "home" && homeIntent.view === "card"}
+                    onClick={() => goHome("card")}
+                  >
+                    Карточка персонажа
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className={`app__nav-link${
+                    page === "home" && homeIntent.view === "campaigns" ? " app__nav-link--active" : ""
+                  }`}
+                  aria-current={page === "home" && homeIntent.view === "campaigns"}
+                  onClick={() => goHome("campaigns")}
+                >
+                  {session.role === "gm" ? "Панель ведущего" : "Кампании"}
+                </button>
+                <button
+                  type="button"
+                  className={`app__nav-link${page === "codex" ? " app__nav-link--active" : ""}`}
+                  aria-current={page === "codex"}
+                  onClick={() => setPage("codex")}
+                >
+                  Кодекс
+                </button>
+                <button
+                  type="button"
+                  className={`app__nav-link${page === "atlas" ? " app__nav-link--active" : ""}`}
+                  aria-current={page === "atlas"}
+                  onClick={() => setPage("atlas")}
+                >
+                  Третий Горизонт
+                </button>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              className="app__nav-toggle"
+              aria-expanded={menuOpen}
+              aria-controls="app-menu"
+              onClick={toggleMenu}
+            >
+              <span className="app__nav-toggle-icon" aria-hidden>
+                {menuOpen ? "✕" : "☰"}
+              </span>
+              Меню
+            </button>
+          </nav>
+        )}
       </header>
 
       {!authReady ? (
@@ -164,33 +261,6 @@ export function App() {
         <Login onSignIn={handleSignIn} onGoogleSignIn={handleGoogleSignIn} />
       ) : (
         <>
-          <nav className="app__nav" aria-label="Разделы">
-            <button
-              type="button"
-              className={`app__nav-link${page === "home" ? " app__nav-link--active" : ""}`}
-              aria-current={page === "home"}
-              onClick={() => setPage("home")}
-            >
-              {session.role === "gm" ? "Панель ведущего" : "Кампании"}
-            </button>
-            <button
-              type="button"
-              className={`app__nav-link${page === "codex" ? " app__nav-link--active" : ""}`}
-              aria-current={page === "codex"}
-              onClick={() => setPage("codex")}
-            >
-              Кодекс
-            </button>
-            <button
-              type="button"
-              className={`app__nav-link${page === "atlas" ? " app__nav-link--active" : ""}`}
-              aria-current={page === "atlas"}
-              onClick={() => setPage("atlas")}
-            >
-              Третий Горизонт
-            </button>
-          </nav>
-
           {page === "codex" ? (
             <Codex codex={codex} />
           ) : page === "atlas" ? (
@@ -207,10 +277,12 @@ export function App() {
             />
           ) : (
             <PlayerHome
+              key={homeIntent.nonce}
               session={session}
               campaigns={campaigns}
               characters={characters}
               onSignOut={handleSignOut}
+              initialView={homeIntent.view}
             />
           )}
         </>
