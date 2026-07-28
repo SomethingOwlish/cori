@@ -40,9 +40,9 @@ export interface CharacterDocument {
 
   biography: Biography;
 
-  concept: ConceptKey;
-  role: string;
-  icon: IconKey;
+  concept?: ConceptKey;
+  role?: string;
+  icon?: IconKey;
   appearance?: string;
   personalProblem?: string;
 
@@ -74,10 +74,6 @@ export function characterToDocument(character: Character): CharacterDocument {
 
     biography: { ...character.biography },
 
-    concept: character.concept,
-    role: character.role,
-    icon: character.icon,
-
     attributes: { ...character.attributes },
     skills: { ...character.skills },
     talents: [...character.talents],
@@ -95,6 +91,9 @@ export function characterToDocument(character: Character): CharacterDocument {
   };
 
   // Необязательные поля включаем, только если заданы — Firestore не примет undefined.
+  if (character.concept !== undefined) doc.concept = character.concept;
+  if (character.role !== undefined) doc.role = character.role;
+  if (character.icon !== undefined) doc.icon = character.icon;
   if (character.playerName !== undefined) doc.playerName = character.playerName;
   if (character.campaignId !== undefined) doc.campaignId = character.campaignId;
   if (character.appearance !== undefined) doc.appearance = character.appearance;
@@ -118,10 +117,6 @@ export function documentToCharacter(id: string, raw: CharacterDocument): Charact
 
     biography: { ...doc.biography },
 
-    concept: doc.concept,
-    role: doc.role,
-    icon: doc.icon,
-
     attributes: { ...doc.attributes },
     skills: { ...doc.skills },
     talents: [...doc.talents],
@@ -138,6 +133,9 @@ export function documentToCharacter(id: string, raw: CharacterDocument): Charact
     radiation: doc.radiation,
   };
 
+  if (doc.concept !== undefined) character.concept = doc.concept;
+  if (doc.role !== undefined) character.role = doc.role;
+  if (doc.icon !== undefined) character.icon = doc.icon;
   if (doc.playerName !== undefined) character.playerName = doc.playerName;
   if (doc.campaignId !== undefined) character.campaignId = doc.campaignId;
   if (doc.appearance !== undefined) character.appearance = doc.appearance;
@@ -159,6 +157,5 @@ function migrate(doc: CharacterDocument): CharacterDocument {
     const legacy = doc as unknown as { upbringing?: Biography["upbringing"] };
     next.biography = { upbringing: legacy.upbringing ?? "plebeian", parentage: "human" };
   }
-  if (!next.role) next.role = "";
   return { ...next, schemaVersion: CURRENT_SCHEMA_VERSION };
 }

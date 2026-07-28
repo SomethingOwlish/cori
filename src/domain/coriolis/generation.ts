@@ -58,30 +58,45 @@ export const OTHER_SKILL_CREATION_MAX = 1;
 /** Стоимость одного улучшения при прокачке (пункты опыта). */
 export const EXPERIENCE_PER_ADVANCE = 5;
 
-/** Итоговая базовая репутация: воспитание (пасынок вдвое) + модификатор амплуа. */
+/**
+ * Итоговая базовая репутация: воспитание (пасынок вдвое) + модификатор амплуа.
+ * Пока воспитание не выбрано, репутация равна 0.
+ */
 export function startingReputation(
-  upbringing: Upbringing,
-  parentage: Parentage,
-  concept: ConceptKey,
+  upbringing: Upbringing | undefined,
+  parentage: Parentage | undefined,
+  concept: ConceptKey | undefined,
 ): number {
+  if (!upbringing) return 0;
   let base = UPBRINGINGS[upbringing].reputation;
   if (parentage === "stray") base = Math.floor(base / 2);
-  return Math.max(0, base + CONCEPTS[concept].reputationModifier);
+  const modifier = concept ? CONCEPTS[concept].reputationModifier : 0;
+  return Math.max(0, base + modifier);
 }
 
-/** Максимум характеристики при создании: ключевая — 5, остальные — 4. */
-export function attributeCreationCap(concept: ConceptKey, key: AttributeKey): number {
-  return key === CONCEPTS[concept].keyAttribute ? KEY_ATTRIBUTE_MAX : ATTRIBUTE_MAX;
+/**
+ * Максимум характеристики при создании: ключевая амплуа — 5, остальные — 4.
+ * Пока амплуа не выбрано, ключевой характеристики нет — предел 4 для всех.
+ */
+export function attributeCreationCap(concept: ConceptKey | undefined, key: AttributeKey): number {
+  return concept && key === CONCEPTS[concept].keyAttribute ? KEY_ATTRIBUTE_MAX : ATTRIBUTE_MAX;
 }
 
-/** Множество ключевых навыков выбранной роли. */
-export function keySkillsOf(concept: ConceptKey, role: string): Set<SkillKey> {
+/** Множество ключевых навыков выбранной роли (пусто, пока роль не выбрана). */
+export function keySkillsOf(
+  concept: ConceptKey | undefined,
+  role: string | undefined,
+): Set<SkillKey> {
   const r = findRole(concept, role);
   return new Set(r ? r.keySkills : []);
 }
 
 /** Максимум навыка при создании: ключевой роли — 3, остальные — 1. */
-export function skillCreationCap(concept: ConceptKey, role: string, key: SkillKey): number {
+export function skillCreationCap(
+  concept: ConceptKey | undefined,
+  role: string | undefined,
+  key: SkillKey,
+): number {
   return keySkillsOf(concept, role).has(key) ? KEY_SKILL_CREATION_MAX : OTHER_SKILL_CREATION_MAX;
 }
 
@@ -302,8 +317,24 @@ export interface CharacterAssessment {
 export function assessCharacter(character: Character): CharacterAssessment {
   const issues: AssessmentIssue[] = [];
   const { upbringing, parentage } = character.biography;
-  const profile = UPBRINGINGS[upbringing];
+  const profile = upbringing ? UPBRINGINGS[upbringing] : undefined;
   const concept = character.concept;
+
+  // Незавершённый черновик: сначала требуем ключевые выборы.
+  if (!upbringing) {
+    issues.push({ severity: "error", area: "biography", message: "Не выбрано воспитание." });
+  }
+  if (!concept) {
+    issues.push({ severity: "error", area: "biography", message: "Не выбрано амплуа." });
+  } else if (!character.role) {
+    issues.push({ severity: "error", area: "biography", message: "Не выбрана роль амплуа." });
+  }
+  if (!character.icon) {
+    issues.push({ severity: "error", area: "talents", message: "Не определён Лик-покровитель." });
+  }
+  if (!character.teamArchetype) {
+    issues.push({ severity: "warning", area: "talents", message: "Не выбрано амплуа команды." });
+  }
 
   // Биография: пасынок не может быть аристократом.
   if (parentage === "stray" && upbringing === "privileged") {
@@ -314,9 +345,9 @@ export function assessCharacter(character: Character): CharacterAssessment {
     });
   }
 
-  // Характеристики: сумма значений равна пулу воспитания.
+  // Характеристики: сумма значений равна пулу воспитания (если оно выбрано).
   const attrSpent = attributePointsSpent(character.attributes);
-  if (attrSpent !== profile.attributePoints) {
+  if (profile && attrSpent !== profile.attributePoints) {
     issues.push({
       severity: "error",
       area: "attributes",
@@ -348,7 +379,7 @@ export function assessCharacter(character: Character): CharacterAssessment {
       issues.push({ severity: "error", area: "skills", message: `${SKILLS[key].name} (${value}) превышает предел ${kind} навыка при создании (${max}).` });
     }
   }
-  if (skillSpent !== profile.skillPoints) {
+  if (profile && skillSpent !== profile.skillPoints) {
     issues.push({
       severity: "error",
       area: "skills",
@@ -357,10 +388,12 @@ export function assessCharacter(character: Character): CharacterAssessment {
   }
 
   // Достоинства: личное из амплуа, командное из амплуа команды, стигма у пасынка.
-  const conceptChoices = new Set(CONCEPTS[concept].talentChoices);
-  const hasPersonal = character.talents.some((t) => conceptChoices.has(t));
-  if (!hasPersonal) {
-    issues.push({ severity: "warning", area: "talents", message: "Не выбрано личное достоинство из списка амплуа." });
+  if (concept) {
+    const conceptChoices = new Set(CONCEPTS[concept].talentChoices);
+    const hasPersonal = character.talents.some((t) => conceptChoices.has(t));
+    if (!hasPersonal) {
+      issues.push({ severity: "warning", area: "talents", message: "Не выбрано личное достоинство из списка амплуа." });
+    }
   }
   if (character.teamArchetype) {
     const teamChoices = new Set(TEAM_ARCHETYPES[character.teamArchetype].talentChoices);
@@ -392,9 +425,9 @@ export function assessCharacter(character: Character): CharacterAssessment {
   return {
     valid: issues.every((i) => i.severity !== "error"),
     attributePointsSpent: attrSpent,
-    attributePointsAllowed: profile.attributePoints,
+    attributePointsAllowed: profile?.attributePoints ?? 0,
     skillPointsSpent: skillSpent,
-    skillPointsAllowed: profile.skillPoints,
+    skillPointsAllowed: profile?.skillPoints ?? 0,
     issues,
   };
 }

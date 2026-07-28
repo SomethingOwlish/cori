@@ -82,6 +82,17 @@
   margin: 0.5rem 0;
 }
 
+.cb__prereq {
+  background: var(--bg-panel-2);
+  border-left: 3px solid var(--danger, #c0603a);
+  border-radius: 0 6px 6px 0;
+  padding: 0.5rem 0.7rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-style: italic;
+  margin: 0.6rem 0;
+}
+
 .cb__field {
   display: flex;
   flex-direction: column;

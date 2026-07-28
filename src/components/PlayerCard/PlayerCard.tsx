@@ -81,9 +81,9 @@ function SkillRow({
 }
 
 export function PlayerCard({ character, canLevelUp = false, onRaiseSkill }: PlayerCardProps) {
-  const concept = CONCEPTS[character.concept];
+  const concept = character.concept ? CONCEPTS[character.concept] : undefined;
   const role = findRole(character.concept, character.role);
-  const icon = ICONS[character.icon];
+  const icon = character.icon ? ICONS[character.icon] : undefined;
   const { upbringing, parentage } = character.biography;
 
   const hpMax = maxHitPoints(character.attributes);
@@ -97,26 +97,32 @@ export function PlayerCard({ character, canLevelUp = false, onRaiseSkill }: Play
       <header className="pc__header">
         <div>
           <h2 className="pc__name">{character.name || "Без имени"}</h2>
-          <p className="pc__concept">
-            {concept.name}
-            {role ? ` · ${role.name}` : ""} · {UPBRINGINGS[upbringing].name}
-            {parentage === "stray" ? ` · ${PARENTAGES.stray.name}` : ""}
-          </p>
+          {(() => {
+            const parts = [
+              concept?.name,
+              role?.name,
+              upbringing ? UPBRINGINGS[upbringing].name : undefined,
+              parentage === "stray" ? PARENTAGES.stray.name : undefined,
+            ].filter(Boolean);
+            return parts.length > 0 ? <p className="pc__concept">{parts.join(" · ")}</p> : null;
+          })()}
           {character.teamArchetype ? (
             <p className="pc__team">Команда: {TEAM_ARCHETYPES[character.teamArchetype].name}</p>
           ) : null}
         </div>
-        <div className="pc__icon" title={icon.description}>
-          <span className="pc__icon-name">{icon.name}</span>
-          <span className="pc__icon-theme">{icon.symbol}</span>
-        </div>
+        {icon ? (
+          <div className="pc__icon" title={icon.description}>
+            <span className="pc__icon-name">{icon.name}</span>
+            <span className="pc__icon-theme">{icon.symbol}</span>
+          </div>
+        ) : null}
       </header>
 
       <section className="pc__attributes" aria-label="Характеристики">
         {ATTRIBUTE_KEYS.map((key) => (
           <div
             key={key}
-            className={`pc-attr${key === concept.keyAttribute ? " pc-attr--key" : ""}`}
+            className={`pc-attr${concept && key === concept.keyAttribute ? " pc-attr--key" : ""}`}
             title={ATTRIBUTES[key].description}
           >
             <span className="pc-attr__value">{character.attributes[key]}</span>
@@ -192,11 +198,13 @@ export function PlayerCard({ character, canLevelUp = false, onRaiseSkill }: Play
       <section className="pc__talents" aria-label="Достоинства">
         <h3 className="pc__subhead">Достоинства</h3>
         <ul className="pc__talent-list">
-          {/* Дар Лика-покровителя — выводится из знака рождения. */}
-          <li className="pc-talent pc-talent--icon">
-            <span className="pc-talent__name">Дар {icon.name}</span>
-            <span className="pc-talent__summary">{icon.gift}</span>
-          </li>
+          {/* Дар Лика-покровителя — выводится из знака рождения (если Лик определён). */}
+          {icon ? (
+            <li className="pc-talent pc-talent--icon">
+              <span className="pc-talent__name">Дар {icon.name}</span>
+              <span className="pc-talent__summary">{icon.gift}</span>
+            </li>
+          ) : null}
           {character.talents.map((key) => {
             const talent = TALENTS[key];
             return (

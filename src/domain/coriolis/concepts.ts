@@ -453,8 +453,12 @@ export const CONCEPTS: Record<ConceptKey, ConceptDef> = {
 
 export const CONCEPT_KEYS: readonly ConceptKey[] = Object.keys(CONCEPTS) as ConceptKey[];
 
-/** Находит роль амплуа по ключу. */
-export function findRole(concept: ConceptKey, roleKey: string): RoleDef | undefined {
+/** Находит роль амплуа по ключу (учитывает незаполненный черновик). */
+export function findRole(
+  concept: ConceptKey | undefined,
+  roleKey: string | undefined,
+): RoleDef | undefined {
+  if (!concept || !roleKey) return undefined;
   return CONCEPTS[concept].roles.find((r) => r.key === roleKey);
 }
 
