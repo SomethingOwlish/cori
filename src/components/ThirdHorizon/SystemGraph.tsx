@@ -56,7 +56,14 @@ export function SystemGraph({ currentSystemId, systemsWithPlaces, onSelect }: Sy
   const base = useMemo(baseViewBox, []);
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
-  const drag = useRef<{ x: number; y: number; panX: number; panY: number } | null>(null);
+  const drag = useRef<{
+    x: number;
+    y: number;
+    panX: number;
+    panY: number;
+    id: number;
+    capturing: boolean;
+  } | null>(null);
   const moved = useRef(false);
 
   // Zoom keeps the box centred; pan is applied in map units so it scales with zoom.
@@ -73,25 +80,32 @@ export function SystemGraph({ currentSystemId, systemsWithPlaces, onSelect }: Sy
   };
 
   const onPointerDown = (e: PointerEvent<SVGSVGElement>) => {
-    drag.current = { x: e.clientX, y: e.clientY, panX: pan.x, panY: pan.y };
+    // Don't capture the pointer yet: capturing on press would retarget the
+    // native `click` to the <svg>, so a node's onClick would never fire. We
+    // only start capturing once an actual drag begins (see onPointerMove).
+    drag.current = { x: e.clientX, y: e.clientY, panX: pan.x, panY: pan.y, id: e.pointerId, capturing: false };
     moved.current = false;
-    (e.currentTarget as SVGSVGElement).setPointerCapture(e.pointerId);
   };
 
   const onPointerMove = (e: PointerEvent<SVGSVGElement>) => {
     const d = drag.current;
     if (!d) return;
     const svg = e.currentTarget as SVGSVGElement;
+    if (!d.capturing) {
+      // A click that never moves past the threshold stays a click on the node.
+      if (Math.abs(e.clientX - d.x) + Math.abs(e.clientY - d.y) <= 3) return;
+      moved.current = true;
+      d.capturing = true;
+      svg.setPointerCapture(d.id);
+    }
     const scale = view.w / svg.clientWidth; // map units per screen pixel
-    const dx = (e.clientX - d.x) * scale;
-    const dy = (e.clientY - d.y) * scale;
-    if (Math.abs(e.clientX - d.x) + Math.abs(e.clientY - d.y) > 3) moved.current = true;
-    setPan({ x: d.panX - dx, y: d.panY - dy });
+    setPan({ x: d.panX - (e.clientX - d.x) * scale, y: d.panY - (e.clientY - d.y) * scale });
   };
 
   const onPointerUp = (e: PointerEvent<SVGSVGElement>) => {
+    const d = drag.current;
     drag.current = null;
-    (e.currentTarget as SVGSVGElement).releasePointerCapture?.(e.pointerId);
+    if (d?.capturing) (e.currentTarget as SVGSVGElement).releasePointerCapture?.(d.id);
   };
 
   const reset = () => {
