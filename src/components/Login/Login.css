@@ -59,3 +59,29 @@
   font-size: 12.5px;
   color: var(--sand);
 }
+
+.login__error {
+  margin: 8px 0 0;
+  color: var(--garnet);
+  font-size: 12.5px;
+}
+
+.login__divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 16px 0;
+  font-family: var(--font-display);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--sand-dim);
+  font-size: 10px;
+}
+
+.login__divider::before,
+.login__divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
