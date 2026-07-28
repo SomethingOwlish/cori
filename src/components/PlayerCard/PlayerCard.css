@@ -1,251 +1,236 @@
-/* Карточка персонажа — отображение. Тема наследуется из App.css. */
+/* Лист персонажа «Кориолиса» — раскладка по печатному бланку ST3099. */
 
-.pc {
-  background: var(--bg-panel);
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  padding: 0.9rem 1rem;
+.pcard {
+  max-width: var(--container-app);
+  margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-  font-size: 0.9rem;
+  gap: 18px;
+  color: var(--ivory);
 }
 
-.pc__header {
+.pcard__header {
   display: flex;
+  align-items: flex-end;
   justify-content: space-between;
-  gap: 0.75rem;
-  border-bottom: 1px solid var(--line);
-  padding-bottom: 0.6rem;
+  gap: 24px;
+  border-bottom: 1px solid var(--border-gold);
+  padding-bottom: 14px;
 }
 
-.pc__name {
-  margin: 0;
-  font-size: 1.25rem;
-  color: var(--gold);
-}
-
-.pc__concept {
-  margin: 0.1rem 0 0;
-  color: var(--muted);
-  font-size: 0.85rem;
-}
-
-.pc__team {
-  margin: 0.1rem 0 0;
-  color: var(--muted);
-  font-size: 0.8rem;
-}
-
-.pc__icon {
-  text-align: right;
-  display: flex;
-  flex-direction: column;
-  min-width: 90px;
-}
-
-.pc__icon-name {
-  color: var(--gold);
+.pcard__eyebrow {
+  font-family: var(--font-body);
+  font-size: 11px;
   font-weight: 600;
-  font-size: 0.9rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--gold);
 }
 
-.pc__icon-theme {
-  color: var(--muted);
-  font-size: 0.75rem;
-  font-style: italic;
+.pcard__name {
+  margin: 4px 0 0;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 40px;
+  line-height: 1.05;
+  letter-spacing: 0.02em;
+  color: var(--ivory);
 }
 
-.pc__attributes {
+.pcard__concept {
+  margin: 4px 0 0;
+  font-size: 14px;
+  color: var(--sand);
+}
+
+.pcard__icon {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.pcard__icon-ar {
+  font-family: var(--font-arabic);
+  font-size: 30px;
+  color: var(--astral);
+  white-space: nowrap;
+}
+.pcard__icon-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--sand-faint);
+}
+.pcard__icon-name {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 17px;
+  color: var(--gold);
+}
+
+.pcard__grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 0.5rem;
+  grid-template-columns: minmax(0, 320px) minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
 }
-
-.pc-attr {
-  background: var(--bg-panel-2);
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  padding: 0.4rem;
-  text-align: center;
-}
-
-.pc-attr--key {
-  border-color: var(--gold);
-  box-shadow: inset 0 0 0 1px var(--gold-dim);
-}
-
-.pc-attr__value {
-  display: block;
-  font-size: 1.4rem;
-  font-weight: 700;
-}
-
-.pc-attr__label {
-  display: block;
-  color: var(--muted);
-  font-size: 0.72rem;
-}
-
-.pc__derived {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 0.4rem;
-}
-
-@media (max-width: 480px) {
-  .pc__derived {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-
-.pc-stat {
+.pcard__col {
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  background: var(--bg-panel-2);
-  border-radius: 6px;
-  padding: 0.3rem 0.4rem;
+  gap: 18px;
 }
-
-.pc-stat__label {
-  color: var(--muted);
-  font-size: 0.72rem;
-}
-
-.pc-stat__value {
-  font-weight: 700;
-}
-
-.pc__levelup-hint {
-  margin: 0;
-  background: rgba(75, 208, 138, 0.1);
-  border: 1px solid var(--ok);
-  border-radius: 6px;
-  padding: 0.4rem 0.55rem;
-  color: #a9e9c7;
-  font-size: 0.82rem;
-}
-
-.pc__skills {
+.pcard__bottom {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(310px, 1fr));
+  gap: 18px;
+  align-items: start;
 }
 
-@media (max-width: 480px) {
-  .pc__skills {
-    grid-template-columns: 1fr;
-  }
+@media (max-width: 920px) {
+  .pcard__grid { grid-template-columns: 1fr; }
+  .pcard__name { font-size: 30px; }
+  .pcard__header { flex-wrap: wrap; }
 }
 
-.pc__subhead {
-  margin: 0 0 0.35rem;
-  color: var(--accent);
-  font-size: 0.85rem;
+/* Инсет-«колодец» (тайлы: метры, опыт, бирры, оружие). */
+.pcard-well {
+  background: var(--void);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 9px 10px 10px;
+}
+.pcard-well--gold { border-color: var(--border-gold); }
+
+.pcard-micro {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
-  letter-spacing: 0.03em;
+  color: var(--sand-faint);
 }
 
-.pc-skill {
-  display: grid;
-  grid-template-columns: 1fr auto auto auto;
-  gap: 0.4rem;
+/* Строка навыка с точками владения. */
+.pcard-skill {
+  display: flex;
   align-items: center;
-  padding: 0.12rem 0;
-  color: var(--muted);
-  font-size: 0.85rem;
+  gap: 8px;
+  padding: 6px;
+  margin: 0 -6px;
+  border-bottom: 1px solid var(--line-soft);
+  border-radius: 3px;
 }
-
-.pc-skill--trained {
-  color: var(--text);
+.pcard-skill:last-child { border-bottom: none; }
+.pcard-skill__name {
+  flex: 1;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--parchment);
 }
-
-.pc-skill__attr {
-  color: var(--muted);
-  font-size: 0.7rem;
+.pcard-skill--untrained .pcard-skill__name { color: var(--sand); }
+.pcard-skill__attr { color: var(--sand-faint); }
+.pcard-skill__pips { display: flex; gap: 4px; }
+.pip {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
 }
-
-.pc-skill__value {
-  font-weight: 700;
-  min-width: 1rem;
+.pip--on { background: var(--gold); border-color: transparent; }
+.pip--hi { background: var(--gold-bright); border-color: transparent; }
+.pcard-skill__val {
+  width: 16px;
   text-align: right;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--gold);
+}
+.pcard-skill__val--zero { color: var(--sand-faint); }
+
+.pcard-subhead {
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--gold);
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-gold);
 }
 
-.pc-skill__raise {
-  width: 1.4rem;
-  height: 1.4rem;
-  border-radius: 5px;
-  background: var(--ok);
-  color: #0d2418;
-  border: none;
-  font-weight: 700;
+/* Инлайн-редактирование: поле, замаскированное под текст. */
+.pcard-edit {
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--gold-12);
+  color: var(--ivory);
+  border: 1px solid var(--border-gold);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: 13px;
+  padding: 5px 8px;
+  outline: none;
+}
+.pcard-edit:focus { border-color: var(--gold-bright); box-shadow: var(--ring-gold); }
+textarea.pcard-edit { resize: vertical; line-height: 1.5; }
+
+.pcard-stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.pcard-stepper button {
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+  background: var(--hull-3);
+  color: var(--parchment);
+  cursor: pointer;
+  font-size: 14px;
   line-height: 1;
 }
+.pcard-stepper button:hover { border-color: var(--border-gold); color: var(--gold-bright); }
+.pcard-stepper button:disabled { opacity: 0.35; pointer-events: none; }
 
-.pc-skill__raise:disabled {
-  opacity: 0.3;
-  cursor: not-allowed;
-}
-
-.pc__talent-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
+.pcard-listrow {
   display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--line-soft);
 }
+.pcard-listrow:last-child { border-bottom: none; }
 
-.pc-talent {
-  background: var(--bg-panel-2);
-  border-radius: 6px;
-  padding: 0.4rem 0.55rem;
+.pcard-del {
+  border: none;
+  background: transparent;
+  color: var(--garnet);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0 4px;
 }
+.pcard-del:hover { filter: brightness(1.2); }
 
-.pc-talent--icon {
-  border: 1px solid var(--gold-dim);
-}
-
-.pc-talent__name {
-  display: block;
-  font-weight: 600;
+.pcard-addbtn {
+  align-self: flex-start;
+  margin-top: 8px;
+  background: transparent;
+  border: 1px dashed var(--border-gold);
   color: var(--gold);
-  font-size: 0.85rem;
+  border-radius: var(--radius-sm);
+  padding: 5px 10px;
+  cursor: pointer;
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
 }
-
-.pc-talent__summary {
-  display: block;
-  color: var(--muted);
-  font-size: 0.8rem;
-}
-
-.pc__bio p,
-.pc__gear,
-.pc__rel {
-  font-size: 0.85rem;
-  margin: 0;
-}
-
-.pc__gear-list,
-.pc__rel-list {
-  margin: 0.25rem 0 0;
-  padding-left: 1.1rem;
-  color: var(--muted);
-  font-size: 0.83rem;
-}
-
-.pc__footer {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  border-top: 1px solid var(--line);
-  padding-top: 0.6rem;
-}
-
-.pc__legend {
-  margin: 0;
-  color: var(--muted);
-  font-size: 0.72rem;
-  border-top: 1px dashed var(--line);
-  padding-top: 0.5rem;
-}
+.pcard-addbtn:hover { background: var(--gold-12); color: var(--gold-bright); }

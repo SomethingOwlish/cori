@@ -15,7 +15,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { CampaignRepository, CharacterRepository } from "../../data";
 import type { Campaign } from "../../domain/campaign";
-import { CONCEPTS, raiseSkillWithExperience, type Character } from "../../domain/coriolis";
+import { CONCEPTS, type Character } from "../../domain/coriolis";
 import type { Session } from "../../session";
 import { CharacterBuilder } from "../CharacterBuilder";
 import { PlayerCard } from "../PlayerCard";
@@ -236,12 +236,11 @@ export function MasterDashboard({
               <button type="button" className="md__overlay-close" onClick={() => setViewing(null)}>
                 ✕
               </button>
-              {/* Мастер может прокачивать навыки героя прямо на карточке (−5 опыта). */}
+              {/* Мастер правит карточку героя целиком прямо здесь. */}
               <PlayerCard
                 character={viewing}
-                canLevelUp
-                onRaiseSkill={(key) => {
-                  const next = raiseSkillWithExperience(viewing, key);
+                editMode="master"
+                onChange={(next) => {
                   setViewing(next);
                   void characters.save(next).then(() => refreshRoster(campaign.id));
                 }}

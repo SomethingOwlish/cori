@@ -1,105 +1,48 @@
-/* Player home styling — matches the app's dark palette. */
+/* Экран игрока — кампании и вход в карточку. */
 
 .ph {
-  --border: #2a2f3a;
-  --muted: #7a8291;
-  --accent: #c9a24b;
-  --panel: #141821;
-
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
-  color: #e6e9ef;
-  font-family: system-ui, -apple-system, sans-serif;
+  gap: 20px;
 }
 
 .ph__head {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
-  gap: 1rem;
+  align-items: flex-end;
+  gap: 16px;
 }
 
 .ph__title {
   margin: 0;
-  font-size: 1.5rem;
+  font-size: var(--fs-display-m);
 }
-
 .ph__welcome {
-  margin: 0.2rem 0 0;
-  color: var(--muted);
-  font-size: 0.9rem;
+  margin: 4px 0 0;
+  color: var(--sand);
+  font-size: var(--fs-sm);
 }
 
-.ph__subhead {
-  margin: 0 0 0.6rem;
-  font-size: 1rem;
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+.ph__crumbs {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
-
-.ph__link {
-  background: transparent;
-  border: none;
-  color: var(--muted);
-  cursor: pointer;
-  font-size: 0.9rem;
-}
-
-.ph__link:hover {
-  color: var(--accent);
-}
-
-.ph__join {
-  padding: 1rem 1.1rem;
-  border: 1px solid var(--border);
-  border-radius: 0.7rem;
-  background: var(--panel);
+.ph__crumb-name {
+  font-family: var(--font-display);
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  color: var(--sand);
 }
 
 .ph__join-form {
   display: flex;
-  gap: 0.6rem;
-  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-start;
 }
 
-.ph__join-form input {
-  flex: 1 1 16rem;
-  padding: 0.6rem 0.7rem;
-  border: 1px solid var(--border);
-  border-radius: 0.5rem;
-  background: #0d1017;
-  color: #e6e9ef;
-  font-size: 0.95rem;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-}
-
-.ph__join-form input:focus {
-  outline: none;
-  border-color: var(--accent);
-}
-
-.ph__primary {
-  padding: 0.6rem 1.1rem;
-  border: none;
-  border-radius: 0.5rem;
-  background: var(--accent);
-  color: #1a1408;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.ph__primary:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-
-.ph__error {
-  margin: 0.5rem 0 0;
-  color: #d16a6a;
-  font-size: 0.85rem;
+.ph__subhead {
+  margin: 8px 0 12px;
 }
 
 .ph__list {
@@ -107,39 +50,34 @@
   margin: 0;
   padding: 0;
   display: grid;
-  gap: 0.6rem;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
 }
-
-.ph__item {
-  width: 100%;
-  text-align: left;
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-  padding: 0.85rem 1rem;
-  border: 1px solid var(--border);
-  border-radius: 0.6rem;
-  background: var(--panel);
-  color: inherit;
-  cursor: pointer;
-}
-
-.ph__item:hover {
-  border-color: var(--accent);
-}
-
 .ph__item-name {
+  display: block;
+  font-family: var(--font-display);
   font-weight: 600;
-  font-size: 1.05rem;
+  font-size: 15px;
+  letter-spacing: 0.03em;
+  color: var(--ivory);
 }
-
 .ph__item-meta {
-  color: var(--muted);
-  font-size: 0.85rem;
+  display: block;
+  margin-top: 4px;
+  font-size: 12.5px;
+  color: var(--sand);
 }
 
 .ph__empty {
-  color: var(--muted);
-  font-size: 0.9rem;
+  color: var(--sand-dim);
+  font-size: var(--fs-sm);
+  background: var(--hull);
+  border: 1px dashed var(--line);
+  border-radius: var(--radius-md);
+  padding: 16px;
   margin: 0;
+}
+
+@media (max-width: 560px) {
+  .ph__join-form { flex-direction: column; }
 }
