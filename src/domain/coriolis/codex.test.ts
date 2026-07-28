@@ -9,9 +9,17 @@ import {
 } from "./codex";
 
 describe("встроенный каталог кодекса", () => {
-  it("содержит записи всех шести типов", () => {
+  it("содержит записи всех типов, включая корабли", () => {
     const counts = countByCategory(BUILTIN_CODEX);
     for (const c of CODEX_CATEGORIES) expect(counts[c]).toBeGreaterThan(0);
+    expect(counts.ship).toBeGreaterThan(0);
+  });
+
+  it("раскладывает корабли по подтипам «Корабль · …»", () => {
+    const groups = groupsForCategory(BUILTIN_CODEX, "ship");
+    expect(groups).toContain("Корабль · Достоинства");
+    expect(groups).toContain("Корабль · Модули");
+    expect(groups).toContain("Корабль · Орудия");
   });
 
   it("даёт уникальные id всем записям", () => {

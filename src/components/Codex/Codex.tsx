@@ -92,7 +92,7 @@ export function Codex({ codex }: CodexProps) {
           <span className="crl-eyebrow">Справочник · الفهرس</span>
           <h2 className="cdx__title crl-title">Кодекс</h2>
           <p className="cdx__sub crl-flavor">
-            Оружие, броня, взрывчатка, снаряжение, достоинства и мистические силы Третьего Горизонта.
+            Оружие, броня, взрывчатка, снаряжение, достоинства, мистические силы и корабли Третьего Горизонта.
           </p>
         </div>
         <Button onClick={() => setAdding(true)} iconLeft="＋">
