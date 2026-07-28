@@ -19,7 +19,7 @@
 
 ## Стек
 
-- **TypeScript + React** (Vite)
+- **TypeScript+React** (Vite)
 - **Vitest** — доменные тесты
 - Firebase / Cloudflare — хостинг и хранение (не нужны для локального запуска)
 
