@@ -41,7 +41,7 @@ interface ViewBox {
 function baseViewBox(): ViewBox {
   const xs = THIRD_HORIZON_SYSTEMS.map((s) => s.x);
   const ys = THIRD_HORIZON_SYSTEMS.map((s) => s.y);
-  const pad = 70;
+  const pad = 110;
   const minX = Math.min(...xs) - pad;
   const minY = Math.min(...ys) - pad;
   return {
@@ -133,10 +133,10 @@ export function SystemGraph({ currentSystemId, systemsWithPlaces, onSelect }: Sy
                 y1={a.y}
                 x2={b.x}
                 y2={b.y}
-                stroke={hazard === "dangerous" ? "#a33b34" : hazard === "unstable" ? "#c79233" : "var(--gold-12)"}
-                strokeWidth={hazard ? 2.2 : 2}
+                stroke={hazard === "dangerous" ? "#d95a50" : hazard === "unstable" ? "#e6b143" : "#c9a967"}
+                strokeWidth={hazard ? 2.4 : 2.2}
                 strokeDasharray={hazard === "dangerous" ? "3 6" : hazard === "unstable" ? "7 6" : undefined}
-                opacity={hazard ? 0.85 : 0.7}
+                opacity={hazard ? 0.95 : 0.78}
               />
             );
           })}
