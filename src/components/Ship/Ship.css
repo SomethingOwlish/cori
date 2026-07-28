@@ -164,7 +164,12 @@
 .shb__title { margin: 0; font-size: 20px; }
 
 .shb__layout { display: grid; grid-template-columns: 1fr 300px; gap: 20px; align-items: start; }
-@media (max-width: 900px) { .shb__layout { grid-template-columns: 1fr; } }
+/* Narrow (side panel / phone): single column with the assessment pinned on top
+   so it is always visible — otherwise it drops below the step content. */
+@media (max-width: 900px) {
+  .shb__layout { grid-template-columns: 1fr; }
+  .shb__assess { order: -1; position: static; }
+}
 
 .shb__main { display: flex; flex-direction: column; gap: 12px; }
 

@@ -372,7 +372,7 @@ export function ShipBuilder({ repository, campaignId, shipCodex, createdBy, onBa
         {/* Живая панель ассесмента */}
         <aside className="shb__assess">
           <Card variant="gilt">
-            <h4 className="shb__assess-h">Данные</h4>
+            <h4 className="shb__assess-h">Ассесмент сборки</h4>
             <div className="shb__assess-stats">
               <div><span>Манёвр.</span><b>{sign(a.stats.maneuver)}</b></div>
               <div><span>Заметность</span><b>{sign(a.stats.signature)}</b></div>
