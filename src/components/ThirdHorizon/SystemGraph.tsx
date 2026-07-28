@@ -163,6 +163,10 @@ export function SystemGraph({ currentSystemId, systemsWithPlaces, onSelect }: Sy
                 }
               }}
             >
+              {/* Generous invisible hit target: the visible dot is only ~8px,
+                  and the label/port don't catch clicks, so without this a node
+                  is easy to miss (worst at the map's edges). */}
+              <circle r={21} className="th-node__hit" />
               {isHere ? (
                 <>
                   <circle r={17} className="th-node__here-glow" />

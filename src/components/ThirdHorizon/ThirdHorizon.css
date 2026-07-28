@@ -45,6 +45,8 @@
 
 .th-node { cursor: pointer; }
 .th-node:focus { outline: none; }
+/* Invisible click/tap target around each node, larger than the visible dot. */
+.th-node__hit { fill: transparent; pointer-events: all; }
 .th-node__label {
   font-family: var(--font-display);
   font-size: 11px;
