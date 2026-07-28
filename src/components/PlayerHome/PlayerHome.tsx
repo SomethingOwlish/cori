@@ -24,9 +24,21 @@ export interface PlayerHomeProps {
   campaigns: CampaignRepository;
   characters: CharacterRepository;
   onSignOut: () => void;
+  /**
+   * С каким экраном открыться. `"card"` (по «Карточка персонажа» из меню) сразу
+   * ныряет в последнюю кампанию игрока и открывает его карточку; `"campaigns"`
+   * (по умолчанию) показывает список кампаний.
+   */
+  initialView?: "campaigns" | "card";
 }
 
-export function PlayerHome({ session, campaigns, characters, onSignOut }: PlayerHomeProps) {
+export function PlayerHome({
+  session,
+  campaigns,
+  characters,
+  onSignOut,
+  initialView = "campaigns",
+}: PlayerHomeProps) {
   const [all, setAll] = useState<Campaign[]>([]);
   const [code, setCode] = useState("");
   const [joinError, setJoinError] = useState<string | null>(null);
@@ -46,6 +58,17 @@ export function PlayerHome({ session, campaigns, characters, onSignOut }: Player
     () => all.filter((c) => hasPlayer(c, session.name)).sort((a, b) => b.createdAt - a.createdAt),
     [all, session.name],
   );
+
+  // «Карточка персонажа» из меню: как только загрузился список кампаний, ныряем
+  // в самую свежую кампанию игрока и открываем его карточку. Срабатывает один
+  // раз за монтирование — дальше игрок волен уйти в список сам.
+  const [autoOpened, setAutoOpened] = useState(false);
+  useEffect(() => {
+    if (initialView !== "card" || autoOpened || activeCampaignId) return;
+    if (mine.length === 0) return;
+    setActiveCampaignId(mine[0].id);
+    setAutoOpened(true);
+  }, [initialView, autoOpened, activeCampaignId, mine]);
 
   const activeCampaign = activeCampaignId ? (all.find((c) => c.id === activeCampaignId) ?? null) : null;
 

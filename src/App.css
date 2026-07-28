@@ -8,6 +8,7 @@
 }
 
 .app__header {
+  position: relative;
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
@@ -51,12 +52,86 @@
   font-size: var(--fs-lg);
 }
 
+/* Меню живёт в шапке: кнопка-переключатель прижата к правому верхнему углу,
+   а пункты в развёрнутом виде растут влево от неё вдоль верхней кромки. */
 .app__nav {
+  position: absolute;
+  top: 18px;
+  right: 24px;
   display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: calc(100% - 48px);
+  margin: 0;
+  padding: 0;
+  border: none;
+  z-index: 3;
+}
+
+.app__nav-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: 1px solid var(--border-gold);
+  border-radius: var(--radius-md);
+  padding: 8px 14px;
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--gold-bright);
+  cursor: pointer;
+}
+
+.app__nav-toggle:hover {
+  background: var(--gold-12);
+}
+
+.app__nav-toggle-icon {
+  font-size: 14px;
+  line-height: 1;
+}
+
+/* Свёрнутое меню: список пунктов сжат по ширине до нуля и скрыт.
+   Приём grid-template-columns 0fr→1fr даёт плавную анимацию ширины;
+   он требует единственной вложенной обёртки (.app__nav-list). */
+.app__nav-items {
+  display: grid;
+  grid-template-columns: 0fr;
+  min-width: 0;
+  transition: grid-template-columns 0.2s ease;
+}
+
+.app__nav-items--open {
+  grid-template-columns: 1fr;
+}
+
+.app__nav-list {
+  display: flex;
+  flex-wrap: nowrap;
   gap: 6px;
-  margin-bottom: 20px;
-  border-bottom: 1px solid var(--line);
-  padding-bottom: 10px;
+  min-width: 0;
+  overflow: hidden;
+  /* Свёрнутое меню убираем и из порядка табуляции. Прячем visibility только
+     после того, как отыграет анимация схлопывания (задержка = её длительность). */
+  visibility: hidden;
+  transition: visibility 0s linear 0.2s;
+}
+
+.app__nav-items--open .app__nav-list {
+  visibility: visible;
+  transition: visibility 0s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app__nav-items {
+    transition: none;
+  }
+  .app__nav-list {
+    transition-delay: 0s;
+  }
 }
 
 .app__nav-link {
@@ -69,6 +144,7 @@
   font-weight: 600;
   letter-spacing: 0.1em;
   text-transform: uppercase;
+  white-space: nowrap;
   color: var(--sand-dim);
   cursor: pointer;
 }
@@ -85,7 +161,46 @@
 
 @media (max-width: 700px) {
   .app { padding: 16px 14px 48px; }
-  .app__header { flex-wrap: wrap; gap: 12px; }
+  .app__header { flex-wrap: wrap; gap: 12px; padding-top: 56px; }
   .app__title { font-size: var(--fs-display-m); }
   .app__mark { font-size: 30px; }
+
+  /* На узком экране горизонтальный ряд не помещается — пункты падают вниз
+     выпадающей панелью под кнопкой «Меню», сворачиваясь уже по высоте. */
+  .app__nav {
+    top: 14px;
+    right: 14px;
+  }
+
+  .app__nav-items {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    grid-template-columns: 1fr;
+    grid-template-rows: 0fr;
+    min-width: 190px;
+    transition: grid-template-rows 0.2s ease;
+  }
+
+  .app__nav-items--open {
+    grid-template-rows: 1fr;
+    background: var(--surface-raise);
+    border: 1px solid var(--border-gold);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-md);
+  }
+
+  .app__nav-list {
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .app__nav-items--open .app__nav-list {
+    padding: 6px;
+  }
+
+  .app__nav-link {
+    width: 100%;
+    text-align: left;
+  }
 }
