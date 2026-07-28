@@ -53,8 +53,7 @@ import {
   type SkillKey,
 } from "../../domain/coriolis";
 import type { CharacterRepository } from "../../data";
-import { PlayerCard } from "../PlayerCard";
-import { builderReducer } from "./builderState";
+import { builderReducer, type BioTextField } from "./builderState";
 import "./CharacterBuilder.css";
 
 export interface CharacterBuilderProps {
@@ -93,7 +92,7 @@ const STEP_TITLES = [
   "Навыки",
   "Достоинства",
   "Лик-покровитель",
-  "Личность и связи",
+  "Личность",
   "Снаряжение",
   "Должность",
   "Итог",
@@ -114,7 +113,6 @@ export function CharacterBuilder({
     scoped(initialCharacter ?? createBlankCharacter(newId()), campaignId, defaultPlayerName),
   );
   const [step, setStep] = useState(0);
-  const [seed, setSeed] = useState(2);
   const [saved, setSaved] = useState<Character[]>([]);
   const [saveState, setSaveState] = useState<SaveState>("idle");
 
@@ -222,26 +220,6 @@ export function CharacterBuilder({
             <button type="button" disabled={step === 0} onClick={() => setStep((s) => s - 1)}>
               ← Назад
             </button>
-            <div className="cb__reroll">
-              <label>
-                Семя{" "}
-                <input
-                  type="number"
-                  value={seed}
-                  onChange={(e) => setSeed(Number(e.target.value) || 0)}
-                  style={{ width: 64 }}
-                />
-              </label>
-              <button
-                type="button"
-                onClick={() => {
-                  dispatch({ type: "reroll", seed });
-                  setSeed((s) => s + 1);
-                }}
-              >
-                ✦ Случайный герой
-              </button>
-            </div>
             <button type="button" disabled={step === STEP_TITLES.length - 1} onClick={() => setStep((s) => s + 1)}>
               Далее →
             </button>
@@ -249,7 +227,7 @@ export function CharacterBuilder({
         </section>
       </div>
 
-      {/* Правая колонка: живой ассесмент и карточка */}
+      {/* Правая колонка: живой ассесмент */}
       <aside className="cb__side">
         <div className="cb__assessment">
           <h3>Ассесмент</h3>
@@ -272,7 +250,6 @@ export function CharacterBuilder({
             </ul>
           )}
         </div>
-        <PlayerCard character={character} />
         {saved.length > 0 && (
           <div className="cb__saved">
             <h3>Сохранённые</h3>
@@ -335,8 +312,22 @@ function StepTeamArchetype({ character, dispatch }: { character: Character; disp
 }
 
 // ── Шаг 2: Биография ────────────────────────────────────────────────────────
+const CUSTOM = "__custom__";
+
 function StepBiography({ character, dispatch }: { character: Character; dispatch: D }) {
   const bio = character.biography;
+  const homeworld = bio.homeworld ?? "";
+  const homeworldListed = BIRTH_PLANETS.some((p) => p.name === homeworld);
+  const [homeworldCustomState, setHomeworldCustom] = useState(homeworld !== "" && !homeworldListed);
+  const homeworldCustom = homeworldCustomState || (homeworld !== "" && !homeworldListed);
+
+  const lineage = bio.lineage ?? "";
+  const lineageListed = LINEAGES.some((l) => l.name === lineage);
+  const [lineageCustom, setLineageCustom] = useState(lineage !== "" && !lineageListed);
+  const lineageCustomActive = lineageCustom || (lineage !== "" && !lineageListed);
+
+  const setBio = (field: BioTextField, value: string) => dispatch({ type: "setBioText", field, value });
+
   return (
     <div>
       <h2>2. Биография</h2>
@@ -349,8 +340,16 @@ function StepBiography({ character, dispatch }: { character: Character; dispatch
       <label className="cb__field">
         Родная планета
         <select
-          value={character.biography.homeworld ?? ""}
-          onChange={(e) => dispatch({ type: "setBioText", field: "homeworld", value: e.target.value })}
+          value={homeworldCustom ? CUSTOM : homeworld}
+          onChange={(e) => {
+            if (e.target.value === CUSTOM) {
+              setHomeworldCustom(true);
+              if (homeworldListed) setBio("homeworld", "");
+            } else {
+              setHomeworldCustom(false);
+              setBio("homeworld", e.target.value);
+            }
+          }}
         >
           <option value="">— не выбрано —</option>
           {BIRTH_PLANETS.map((p) => (
@@ -358,11 +357,21 @@ function StepBiography({ character, dispatch }: { character: Character; dispatch
               {p.roll}. {p.name}
             </option>
           ))}
+          <option value={CUSTOM}>Определю сам(а)</option>
         </select>
       </label>
-      {character.biography.homeworld && (
-        <Hint>{BIRTH_PLANETS.find((p) => p.name === character.biography.homeworld)?.description}</Hint>
-      )}
+      {homeworldCustom ? (
+        <label className="cb__field">
+          Своя планета
+          <input
+            value={homeworld}
+            onChange={(e) => setBio("homeworld", e.target.value)}
+            placeholder="Название родного мира"
+          />
+        </label>
+      ) : homeworldListed ? (
+        <Hint>{BIRTH_PLANETS.find((p) => p.name === homeworld)?.description}</Hint>
+      ) : null}
 
       <h3>Линия происхождения</h3>
       <div className="cb__choices">
@@ -370,15 +379,39 @@ function StepBiography({ character, dispatch }: { character: Character; dispatch
           <button
             key={l.key}
             type="button"
-            className={`cb__choice${character.biography.lineage === l.name ? " cb__choice--on" : ""}`}
-            onClick={() => dispatch({ type: "setBioText", field: "lineage", value: l.name })}
+            className={`cb__choice${!lineageCustomActive && lineage === l.name ? " cb__choice--on" : ""}`}
+            onClick={() => {
+              setLineageCustom(false);
+              setBio("lineage", lineage === l.name ? "" : l.name);
+            }}
             title={l.description}
           >
             <b>{l.name}</b>
             <span>{l.description}</span>
           </button>
         ))}
+        <button
+          type="button"
+          className={`cb__choice${lineageCustomActive ? " cb__choice--on" : ""}`}
+          onClick={() => {
+            setLineageCustom(true);
+            if (lineageListed) setBio("lineage", "");
+          }}
+        >
+          <b>Определю сам(а)</b>
+          <span>Своя линия происхождения.</span>
+        </button>
       </div>
+      {lineageCustomActive && (
+        <label className="cb__field">
+          Своя линия
+          <input
+            value={lineage}
+            onChange={(e) => setBio("lineage", e.target.value)}
+            placeholder="Опиши линию происхождения"
+          />
+        </label>
+      )}
 
       <h3>Воспитание</h3>
       <div className="cb__choices">
@@ -782,23 +815,30 @@ function StepIcon({ character, dispatch }: { character: Character; dispatch: D }
   );
 }
 
-// ── Шаг 9: Личная проблема и взаимоотношения ─────────────────────────────────
+// ── Шаг 9: Личная проблема ───────────────────────────────────────────────────
 function StepPersonality({ character, dispatch }: { character: Character; dispatch: D }) {
   const concept = character.concept ? CONCEPTS[character.concept] : undefined;
+  // «Своя» проблема — заданная вручную, которой нет в списке амплуа.
+  const problem = character.personalProblem ?? "";
+  const listed = !!concept && concept.personalProblems.includes(problem);
+  const [custom, setCustom] = useState(problem !== "" && !listed);
+  const customActive = custom || (problem !== "" && !listed);
   if (!concept) {
     return (
       <div>
-        <h2>9. Личность и связи</h2>
-        <Prerequisite>Личные проблемы и примеры связей зависят от амплуа — выбери его сначала.</Prerequisite>
+        <h2>9. Личность</h2>
+        <Prerequisite>Личные проблемы зависят от амплуа — выбери его сначала.</Prerequisite>
       </div>
     );
   }
+  const setProblem = (value: string) => dispatch({ type: "setText", field: "personalProblem", value });
   return (
     <div>
-      <h2>9. Личность и связи</h2>
+      <h2>9. Личность</h2>
       <Hint>
         Личная проблема — инструмент ведущего для создания историй; столкнувшись с ней, ты можешь
-        заработать пункты опыта. Взаимоотношения связывают тебя с другими персонажами игроков.
+        заработать пункты опыта. Взаимоотношения с другими героями определяются позже, за общим
+        столом, — здесь их не задать.
       </Hint>
 
       <h3>Личная проблема</h3>
@@ -807,45 +847,38 @@ function StepPersonality({ character, dispatch }: { character: Character; dispat
           <button
             key={p}
             type="button"
-            className={`cb__choice${character.personalProblem === p ? " cb__choice--on" : ""}`}
-            onClick={() =>
-              dispatch({
-                type: "setText",
-                field: "personalProblem",
-                value: character.personalProblem === p ? "" : p,
-              })
-            }
+            className={`cb__choice${!customActive && problem === p ? " cb__choice--on" : ""}`}
+            onClick={() => {
+              setCustom(false);
+              setProblem(problem === p ? "" : p);
+            }}
           >
             <span>{p}</span>
           </button>
         ))}
+        <button
+          type="button"
+          className={`cb__choice${customActive ? " cb__choice--on" : ""}`}
+          onClick={() => {
+            setCustom(true);
+            if (listed) setProblem("");
+          }}
+        >
+          <b>Определю сам(а)</b>
+          <span>Придумать личную проблему своими словами.</span>
+        </button>
       </div>
-
-      <h3>Взаимоотношения (примеры для амплуа «{concept.name}»)</h3>
-      <div className="cb__choices">
-        {concept.relationships.map((r, i) => {
-          const has = character.relationships.some((x) => x.description === r);
-          return (
-            <button
-              key={i}
-              type="button"
-              className={`cb__choice${has ? " cb__choice--on" : ""}`}
-              onClick={() =>
-                dispatch({
-                  type: "patch",
-                  patch: {
-                    relationships: has
-                      ? character.relationships.filter((x) => x.description !== r)
-                      : [...character.relationships, { name: "Товарищ", description: r }],
-                  },
-                })
-              }
-            >
-              <span>{r}</span>
-            </button>
-          );
-        })}
-      </div>
+      {customActive && (
+        <label className="cb__field">
+          Своя личная проблема
+          <textarea
+            rows={2}
+            value={problem}
+            onChange={(e) => setProblem(e.target.value)}
+            placeholder="Опиши, что не даёт герою покоя"
+          />
+        </label>
+      )}
     </div>
   );
 }
@@ -912,16 +945,21 @@ function StepShipPosition({ character, dispatch }: { character: Character; dispa
         должность.
       </Hint>
       <div className="cb__choices">
-        {SHIP_POSITION_KEYS.map((key) => (
-          <button
-            key={key}
-            type="button"
-            className={`cb__choice${character.shipPosition === key ? " cb__choice--on" : ""}`}
-            onClick={() => dispatch({ type: "setShipPosition", position: key })}
-          >
-            <b>{SHIP_POSITIONS[key]}</b>
-          </button>
-        ))}
+        {SHIP_POSITION_KEYS.map((key) => {
+          const pos = SHIP_POSITIONS[key];
+          return (
+            <button
+              key={key}
+              type="button"
+              className={`cb__choice${character.shipPosition === key ? " cb__choice--on" : ""}`}
+              onClick={() => dispatch({ type: "setShipPosition", position: key })}
+            >
+              <b>{pos.name}</b>
+              <span>{pos.description}</span>
+              <span className="cb__stat-line">Основной бросок: {pos.roll}</span>
+            </button>
+          );
+        })}
       </div>
     </div>
   );
@@ -943,7 +981,8 @@ function StepSummary({
     <div>
       <h2>12. Итог</h2>
       <Hint>
-        Проверь готовую карточку справа. Уровни навыка: {Object.entries(SKILL_LEVEL_NAMES)
+        Проверь ассесмент справа и сохрани героя — сразу откроется его карточка. Уровни навыка:{" "}
+        {Object.entries(SKILL_LEVEL_NAMES)
           .filter(([n]) => Number(n) > 0)
           .map(([n, name]) => `${n} — ${name}`)
           .join(", ")}
