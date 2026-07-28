@@ -494,12 +494,40 @@ export const TEAM_ARCHETYPE_KEYS: readonly TeamArchetypeKey[] = Object.keys(
 /** Корабельные должности (стр. 26). */
 export type ShipPosition = "captain" | "engineer" | "pilot" | "sensorOperator" | "gunner";
 
-export const SHIP_POSITIONS: Record<ShipPosition, string> = {
-  captain: "Капитан",
-  engineer: "Бортинженер",
-  pilot: "Пилот",
-  sensorOperator: "Штурман-оператор",
-  gunner: "Бортстрелок",
+export interface ShipPositionDef {
+  name: string;
+  /** Чем должность занята на корабле. */
+  description: string;
+  /** Основной бросок должности (навык + характеристика). */
+  roll: string;
+}
+
+export const SHIP_POSITIONS: Record<ShipPosition, ShipPositionDef> = {
+  captain: {
+    name: "Капитан",
+    description: "Командует кораблём и раздаёт приказы команде; в бою действует первым и передаёт свой манёвр товарищам.",
+    roll: "Приказ (Эмпатия)",
+  },
+  engineer: {
+    name: "Бортинженер",
+    description: "Следит за реактором, щитами и системами, латает повреждения и перенаправляет энергию в бою.",
+    roll: "Технология (Смекалка)",
+  },
+  pilot: {
+    name: "Пилот",
+    description: "Управляет кораблём: уклоняется, сближается и выполняет манёвры в космическом бою.",
+    roll: "Пилотирование (Ловкость)",
+  },
+  sensorOperator: {
+    name: "Штурман-оператор",
+    description: "Прокладывает курс, ведёт сканирование и радиоэлектронную борьбу, наводит орудия через сенсоры.",
+    roll: "Информаторика (Смекалка)",
+  },
+  gunner: {
+    name: "Бортстрелок",
+    description: "Ведёт огонь из корабельных орудий по вражеским кораблям и целям.",
+    roll: "Дальний бой (Ловкость)",
+  },
 };
 
 export const SHIP_POSITION_KEYS: readonly ShipPosition[] = Object.keys(

@@ -104,6 +104,7 @@ export function PlayerCard({ character, editMode, onChange, canLevelUp, onRaiseS
   const [editing, setEditing] = useState(false);
   const [rollSkill, setRollSkill] = useState<SkillKey | null>(null);
   const [levelUpOpen, setLevelUpOpen] = useState(false);
+  const [newTalent, setNewTalent] = useState("");
 
   const active = canEdit && editing;
 
@@ -131,6 +132,25 @@ export function PlayerCard({ character, editMode, onChange, canLevelUp, onRaiseS
     } else if (canRaiseSkill(character, key)) {
       onRaiseSkill ? onRaiseSkill(key) : onChange(raiseSkillWithExperience(character, key));
     }
+  };
+  // ── прокачка: новое достоинство ─────────────────────────────────────────────
+  // Мастер добавляет свободно; игрок тратит опыт (как и на навык). Пока это поле
+  // свободного ввода — любое достоинство из книги правил вписывается вручную.
+  const canAddTalent = isMaster || character.experience >= EXPERIENCE_PER_ADVANCE;
+  const addTalent = () => {
+    const name = newTalent.trim();
+    if (!onChange || !name || character.talents.includes(name)) return;
+    if (isMaster) {
+      patch({ talents: [...character.talents, name] });
+    } else {
+      if (character.experience < EXPERIENCE_PER_ADVANCE) return;
+      onChange({
+        ...character,
+        experience: character.experience - EXPERIENCE_PER_ADVANCE,
+        talents: [...character.talents, name],
+      });
+    }
+    setNewTalent("");
   };
   const roll = rollSkill ? { skill: SKILLS[rollSkill], attrVal: character.attributes[SKILLS[rollSkill].attribute], val: character.skills[rollSkill] } : null;
   const pool = roll ? roll.attrVal + roll.val : 0;
@@ -167,7 +187,7 @@ export function PlayerCard({ character, editMode, onChange, canLevelUp, onRaiseS
       {canEdit ? (
         <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 12 }}>
           <span className={MICRO_LABEL} style={{ color: isMaster ? "var(--gold)" : "var(--astral-dim)" }}>
-            {isMaster ? "Режим мастера" : "Прокачка · моя карточка"}
+            {isMaster ? "Режим мастера" : "Моя карточка · правка"}
           </span>
           <Button size="sm" variant={editing ? "primary" : "secondary"} onClick={() => setEditing((e) => !e)}>
             {editing ? "Готово" : "Править"}
@@ -197,7 +217,7 @@ export function PlayerCard({ character, editMode, onChange, canLevelUp, onRaiseS
               upbringing ? UPBRINGINGS[upbringing].name : undefined,
               parentage === "stray" ? PARENTAGES.stray.name : undefined,
               character.teamArchetype ? TEAM_ARCHETYPES[character.teamArchetype].name : undefined,
-              character.shipPosition ? SHIP_POSITIONS[character.shipPosition] : undefined,
+              character.shipPosition ? SHIP_POSITIONS[character.shipPosition].name : undefined,
             ]
               .filter(Boolean)
               .join(" · ") || "Черновик героя"}
@@ -228,7 +248,7 @@ export function PlayerCard({ character, editMode, onChange, canLevelUp, onRaiseS
                 </span>
               )}
             </div>
-            {active && isMaster ? (
+            {active ? (
               <div style={{ marginTop: 10 }}>
                 <input
                   className="pcard-edit"
@@ -262,10 +282,10 @@ export function PlayerCard({ character, editMode, onChange, canLevelUp, onRaiseS
 
             {/* Метры */}
             <div style={{ marginTop: 14, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-              <MeterTile label="Здоровье" value={character.hitPointsCurrent} max={hpMax} tone="garnet" editable={active && isMaster} onChange={(v) => patch({ hitPointsCurrent: v })} />
-              <MeterTile label="Рассудок" value={character.mindPointsCurrent} max={mpMax} tone="astral" editable={active && isMaster} onChange={(v) => patch({ mindPointsCurrent: v })} />
-              <MeterTile label="Радиация" value={character.radiation} max={10} tone="amber" editable={active && isMaster} onChange={(v) => patch({ radiation: v })} />
-              <MeterTile label="Репутация" value={character.reputation} max={10} tone="gold" gold editable={active && isMaster} onChange={(v) => patch({ reputation: v })} />
+              <MeterTile label="Здоровье" value={character.hitPointsCurrent} max={hpMax} tone="garnet" editable={active} onChange={(v) => patch({ hitPointsCurrent: v })} />
+              <MeterTile label="Рассудок" value={character.mindPointsCurrent} max={mpMax} tone="astral" editable={active} onChange={(v) => patch({ mindPointsCurrent: v })} />
+              <MeterTile label="Радиация" value={character.radiation} max={10} tone="amber" editable={active} onChange={(v) => patch({ radiation: v })} />
+              <MeterTile label="Репутация" value={character.reputation} max={10} tone="gold" gold editable={active} onChange={(v) => patch({ reputation: v })} />
             </div>
 
             {/* Опыт и бирры */}
@@ -375,10 +395,10 @@ export function PlayerCard({ character, editMode, onChange, canLevelUp, onRaiseS
             </span>
           }
         >
-          <GearList character={character} active={active && isMaster} patch={patch} />
+          <GearList character={character} active={active} patch={patch} />
           <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid var(--border-gold)", display: "flex", flexDirection: "column", gap: 4 }}>
             <span className={MICRO_LABEL}>Моя каюта</span>
-            {active && isMaster ? (
+            {active ? (
               <textarea className="pcard-edit" rows={2} value={character.quarters ?? ""} onChange={(e) => patch({ quarters: e.target.value })} />
             ) : (
               <p style={{ ...TEXT, fontSize: 12, color: "var(--sand)" }}>{character.quarters || "—"}</p>
@@ -388,17 +408,17 @@ export function PlayerCard({ character, editMode, onChange, canLevelUp, onRaiseS
 
         {/* Оружие */}
         <Card eyebrow="Бой" title="Оружие">
-          <Weapons character={character} active={active && isMaster} patch={patch} />
+          <Weapons character={character} active={active} patch={patch} />
         </Card>
 
         {/* Травмы */}
         <Card eyebrow="Состояние" title="Травмы">
-          <Injuries character={character} active={active && isMaster} patch={patch} />
+          <Injuries character={character} active={active} patch={patch} />
         </Card>
 
         {/* Примечания */}
         <Card title="Примечания">
-          {active && isMaster ? (
+          {active ? (
             <textarea className="pcard-edit" rows={4} value={character.notes ?? ""} onChange={(e) => patch({ notes: e.target.value })} />
           ) : (
             <p style={{ ...TEXT, fontSize: 13, color: "var(--sand)" }}>{character.notes || "—"}</p>
@@ -427,15 +447,17 @@ export function PlayerCard({ character, editMode, onChange, canLevelUp, onRaiseS
         open={levelUpOpen}
         onClose={() => setLevelUpOpen(false)}
         eyebrow="Развитие"
-        title="Прокачка навыков"
+        title="Прокачка"
         width={480}
         footer={<Button variant="ghost" onClick={() => setLevelUpOpen(false)}>Закрыть</Button>}
       >
         <p style={{ margin: "0 0 12px", fontSize: 13, lineHeight: 1.55, color: "var(--sand)" }}>
           {isMaster
-            ? "Мастер поднимает навыки свободно."
-            : `Опыт тратится между сессиями: ${EXPERIENCE_PER_ADVANCE} очков за шаг навыка. Доступно ${character.experience} очков.`}
+            ? "Мастер поднимает навыки и выдаёт достоинства свободно."
+            : `Опыт тратится между сессиями: ${EXPERIENCE_PER_ADVANCE} очков за шаг навыка или новое достоинство. Доступно ${character.experience} очков.`}
         </p>
+
+        <span className="pcard-subhead">Навыки</span>
         <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
           {[...GENERAL_SKILL_KEYS, ...ADVANCED_SKILL_KEYS].map((k) => {
             const val = character.skills[k];
@@ -451,6 +473,46 @@ export function PlayerCard({ character, editMode, onChange, canLevelUp, onRaiseS
               </div>
             );
           })}
+        </div>
+
+        {/* Достоинства — свободный ввод (любое из книги правил) */}
+        <span className="pcard-subhead" style={{ marginTop: 16 }}>Достоинства</span>
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {character.talents.length > 0 ? (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+              {character.talents.map((key) => {
+                const t = TALENTS[key];
+                return (
+                  <span key={key} style={{ fontSize: 12, padding: "3px 8px", borderRadius: "var(--radius-xs)", border: "1px solid var(--line)", color: "var(--parchment)" }}>
+                    {t ? t.name : key}
+                  </span>
+                );
+              })}
+            </div>
+          ) : null}
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <input
+              className="pcard-edit"
+              style={{ flex: 1 }}
+              placeholder="Название достоинства"
+              value={newTalent}
+              onChange={(e) => setNewTalent(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  addTalent();
+                }
+              }}
+            />
+            <Button size="sm" variant="primary" disabled={!canAddTalent || newTalent.trim() === ""} onClick={addTalent}>
+              Взять
+            </Button>
+          </div>
+          {!isMaster && !canAddTalent ? (
+            <span style={{ fontSize: 12, color: "var(--sand-faint)" }}>
+              Недостаточно опыта: нужно {EXPERIENCE_PER_ADVANCE} очков.
+            </span>
+          ) : null}
         </div>
       </Dialog>
     </article>
