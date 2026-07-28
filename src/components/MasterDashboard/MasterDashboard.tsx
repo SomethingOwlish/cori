@@ -13,9 +13,9 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { CampaignRepository, CharacterRepository } from "../../data";
+import type { CampaignRepository, CharacterRepository, ShipRepository } from "../../data";
 import type { Campaign } from "../../domain/campaign";
-import { CONCEPTS, type Character } from "../../domain/coriolis";
+import { assessShip, CONCEPTS, type Character } from "../../domain/coriolis";
 import type { Session } from "../../session";
 import { CharacterBuilder } from "../CharacterBuilder";
 import { PlayerCard } from "../PlayerCard";
@@ -25,8 +25,12 @@ export interface MasterDashboardProps {
   session: Session;
   campaigns: CampaignRepository;
   characters: CharacterRepository;
+  ships: ShipRepository;
+  onOpenShip: (campaignId: string) => void;
   onSignOut: () => void;
 }
+
+const money = (n: number) => new Intl.NumberFormat("ru-RU").format(n);
 
 /** Best-effort unique id. */
 function newId(): string {
@@ -53,6 +57,8 @@ export function MasterDashboard({
   session,
   campaigns,
   characters,
+  ships,
+  onOpenShip,
   onSignOut,
 }: MasterDashboardProps) {
   const [allCampaigns, setAllCampaigns] = useState<Campaign[]>([]);
@@ -60,6 +66,7 @@ export function MasterDashboard({
   const [view, setView] = useState<View>({ kind: "list" });
   const [viewing, setViewing] = useState<Character | null>(null);
   const [newName, setNewName] = useState("");
+  const [shipDebt, setShipDebt] = useState<number | null>(null);
 
   // Only this GM's campaigns.
   const myCampaigns = useMemo(
@@ -94,6 +101,23 @@ export function MasterDashboard({
   useEffect(() => {
     if (view.kind === "campaign") void refreshRoster(view.campaignId);
   }, [view, refreshRoster]);
+
+  // Load the active ship's debt to show on the campaign page.
+  useEffect(() => {
+    if (view.kind !== "campaign") {
+      setShipDebt(null);
+      return;
+    }
+    let cancelled = false;
+    void ships.listByCampaign(view.campaignId).then((list) => {
+      if (cancelled) return;
+      const active = list.find((s) => !s.archived);
+      setShipDebt(active ? assessShip(active).debt : null);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [view, ships]);
 
   const selectedCampaign = useMemo(() => {
     const id = view.kind === "campaign" ? view.campaignId : null;
@@ -152,6 +176,7 @@ export function MasterDashboard({
             <p className="md__camp-meta">
               Ведущий: {campaign.gmName} · персонажей: {roster.length} · игроков:{" "}
               {campaign.playerNames.length}
+              {shipDebt !== null && ` · долг корабля: ${money(shipDebt)} б.`}
             </p>
           </div>
           <div className="md__camp-code" title="Игроки вводят этот код, чтобы присоединиться">
@@ -177,6 +202,9 @@ export function MasterDashboard({
             onClick={() => setView({ kind: "builder", campaignId: campaign.id })}
           >
             + Новый персонаж
+          </button>
+          <button type="button" className="md__link" onClick={() => onOpenShip(campaign.id)}>
+            🚀 Корабль
           </button>
         </div>
 
