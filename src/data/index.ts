@@ -13,6 +13,10 @@ export { LocalStorageCharacterRepository } from "./localStorageCharacterReposito
 export type { CampaignRepository } from "./campaignRepository";
 export { LocalStorageCampaignRepository } from "./localStorageCampaignRepository";
 
+// Codex persistence (user-added entries)
+export type { CodexRepository } from "./codexRepository";
+export { LocalStorageCodexRepository } from "./localStorageCodexRepository";
+
 // Firestore implementation
 export {
   characterToDocument,
@@ -29,6 +33,7 @@ export {
 } from "./firestore/firebaseApp";
 export { FirestoreCharacterRepository } from "./firestore/firestoreCharacterRepository";
 export { FirestoreCampaignRepository } from "./firestore/firestoreCampaignRepository";
+export { FirestoreCodexRepository } from "./firestore/firestoreCodexRepository";
 export {
   getFirebaseAuth,
   ensureSignedIn,

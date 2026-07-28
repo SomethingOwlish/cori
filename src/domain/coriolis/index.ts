@@ -10,6 +10,7 @@ export * from "./skills";
 export * from "./upbringing";
 export * from "./icons";
 export * from "./talents";
+export * from "./codex";
 export * from "./concepts";
 export * from "./character";
 export * from "./generation";
