@@ -85,12 +85,16 @@ export function builderReducer(character: Character, action: BuilderAction): Cha
       return action.character;
 
     case "reroll":
-      return generateCharacter({
-        id: character.id,
-        seed: action.seed,
-        name: character.name || undefined,
-        playerName: character.playerName,
-      });
+      // Сохраняем id, текст личности и кампанию; остальное определяет семя.
+      return {
+        ...generateCharacter({
+          id: character.id,
+          seed: action.seed,
+          name: character.name || undefined,
+          playerName: character.playerName,
+        }),
+        campaignId: character.campaignId,
+      };
 
     case "setText": {
       const value = action.value;

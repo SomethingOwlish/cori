@@ -36,6 +36,7 @@ export interface CharacterDocument {
 
   name: string;
   playerName?: string;
+  campaignId?: string;
 
   biography: Biography;
 
@@ -95,6 +96,7 @@ export function characterToDocument(character: Character): CharacterDocument {
 
   // Необязательные поля включаем, только если заданы — Firestore не примет undefined.
   if (character.playerName !== undefined) doc.playerName = character.playerName;
+  if (character.campaignId !== undefined) doc.campaignId = character.campaignId;
   if (character.appearance !== undefined) doc.appearance = character.appearance;
   if (character.personalProblem !== undefined) doc.personalProblem = character.personalProblem;
   if (character.teamArchetype !== undefined) doc.teamArchetype = character.teamArchetype;
@@ -137,6 +139,7 @@ export function documentToCharacter(id: string, raw: CharacterDocument): Charact
   };
 
   if (doc.playerName !== undefined) character.playerName = doc.playerName;
+  if (doc.campaignId !== undefined) character.campaignId = doc.campaignId;
   if (doc.appearance !== undefined) character.appearance = doc.appearance;
   if (doc.personalProblem !== undefined) character.personalProblem = doc.personalProblem;
   if (doc.teamArchetype !== undefined) character.teamArchetype = doc.teamArchetype;

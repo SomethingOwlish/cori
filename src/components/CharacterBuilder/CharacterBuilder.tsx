@@ -55,11 +55,26 @@ import "./CharacterBuilder.css";
 export interface CharacterBuilderProps {
   repository: CharacterRepository;
   initialCharacter?: Character;
+  /** Кампания, к которой привязывается создаваемый герой. */
+  campaignId?: string;
+  /** Имя игрока по умолчанию (из сессии). */
+  defaultPlayerName?: string;
+  /** Кнопка возврата (к списку кампаний / панели мастера). */
+  onBack?: () => void;
 }
 
 function newId(): string {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) return crypto.randomUUID();
   return `char-${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
+}
+
+/** Привязывает героя к кампании и игроку. */
+function scoped(character: Character, campaignId?: string, playerName?: string): Character {
+  return {
+    ...character,
+    ...(campaignId !== undefined ? { campaignId } : {}),
+    ...(playerName && !character.playerName ? { playerName } : {}),
+  };
 }
 
 const STEP_TITLES = [
@@ -77,10 +92,16 @@ const STEP_TITLES = [
 
 type SaveState = "idle" | "saving" | "saved" | "error";
 
-export function CharacterBuilder({ repository, initialCharacter }: CharacterBuilderProps) {
+export function CharacterBuilder({
+  repository,
+  initialCharacter,
+  campaignId,
+  defaultPlayerName,
+  onBack,
+}: CharacterBuilderProps) {
   const [character, dispatch] = useReducer(
     builderReducer,
-    initialCharacter ?? generateCharacter({ id: newId(), seed: 1 }),
+    scoped(initialCharacter ?? generateCharacter({ id: newId(), seed: 1 }), campaignId, defaultPlayerName),
   );
   const [step, setStep] = useState(0);
   const [seed, setSeed] = useState(2);
@@ -93,11 +114,14 @@ export function CharacterBuilder({ repository, initialCharacter }: CharacterBuil
 
   const refreshList = useCallback(async () => {
     try {
-      setSaved(await repository.list());
+      const all = await repository.list();
+      const list = campaignId !== undefined ? all.filter((c) => c.campaignId === campaignId) : all;
+      list.sort((a, b) => (a.name || a.id).localeCompare(b.name || b.id, "ru"));
+      setSaved(list);
     } catch {
       /* список необязателен */
     }
-  }, [repository]);
+  }, [repository, campaignId]);
 
   useEffect(() => {
     void refreshList();
@@ -106,13 +130,13 @@ export function CharacterBuilder({ repository, initialCharacter }: CharacterBuil
   const save = useCallback(async () => {
     setSaveState("saving");
     try {
-      await repository.save(character);
+      await repository.save(scoped(character, campaignId));
       setSaveState("saved");
       await refreshList();
     } catch {
       setSaveState("error");
     }
-  }, [character, repository, refreshList]);
+  }, [character, repository, refreshList, campaignId]);
 
   // ── Снаряжение: выбор одного предмета из каждой строки ────────────────────
   const [gearChoice, setGearChoice] = useState<number[]>([]);
@@ -137,6 +161,11 @@ export function CharacterBuilder({ repository, initialCharacter }: CharacterBuil
   return (
     <div className="cb">
       <div className="cb__main">
+        {onBack ? (
+          <button type="button" className="cb__back" onClick={onBack}>
+            ← К списку
+          </button>
+        ) : null}
         {/* Навигация по шагам */}
         <nav className="cb__steps" aria-label="Шаги создания">
           {STEP_TITLES.map((title, i) => (

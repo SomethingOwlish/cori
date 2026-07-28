@@ -373,3 +373,12 @@
   padding: 0.15rem 0;
   text-align: left;
 }
+
+.cb__back {
+  background: none;
+  border: none;
+  color: var(--gold);
+  padding: 0 0 0.4rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
