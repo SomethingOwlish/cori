@@ -22,6 +22,16 @@ describe("встроенный каталог кодекса", () => {
     expect(groups).toContain("Корабль · Орудия");
   });
 
+  it("включает материалы кампаний: практики Резонанса и артефакты", () => {
+    const mystic = groupsForCategory(BUILTIN_CODEX, "mysticPower");
+    expect(mystic).toContain("Практики Резонанса (Эмиссар)");
+    const ulunga = BUILTIN_CODEX.find((e) => e.name === "Стрела Улунга");
+    expect(ulunga?.category).toBe("weapon");
+    expect(ulunga?.tags).toContain("Игнорирует броню");
+    const artifacts = searchCodex(BUILTIN_CODEX, { text: "артефакт" });
+    expect(artifacts.length).toBeGreaterThan(0);
+  });
+
   it("даёт уникальные id всем записям", () => {
     const ids = BUILTIN_CODEX.map((e) => e.id);
     expect(new Set(ids).size).toBe(ids.length);
