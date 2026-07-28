@@ -50,21 +50,37 @@ export function ShipPage({
   const [customCodex, setCustomCodex] = useState<CodexEntry[]>([]);
   const isMaster = role === "gm";
 
+  const [loadError, setLoadError] = useState<string | null>(null);
+
   const refresh = useCallback(async () => {
     if (!campaignId) {
       setShips([]);
       setLoaded(true);
       return;
     }
-    setShips(await repository.listByCampaign(campaignId));
-    setLoaded(true);
+    // Always flip `loaded` — otherwise a rejected read (e.g. Firestore rules)
+    // would leave the page stuck on «Загрузка корабля…» forever.
+    try {
+      setShips(await repository.listByCampaign(campaignId));
+      setLoadError(null);
+    } catch (error) {
+      console.error("Не удалось загрузить корабли кампании.", error);
+      setLoadError("Не удалось загрузить корабли. Проверьте доступ к базе и обновите страницу.");
+    } finally {
+      setLoaded(true);
+    }
   }, [repository, campaignId]);
 
   useEffect(() => {
     void refresh();
-    void codex.list().then(setCustomCodex);
+    void codex.list().then(setCustomCodex).catch(() => setCustomCodex([]));
     if (!campaignId) return;
-    const unsub = repository.subscribe(campaignId, (next) => setShips(next));
+    let unsub = () => {};
+    try {
+      unsub = repository.subscribe(campaignId, (next) => setShips(next));
+    } catch (error) {
+      console.error("Не удалось подписаться на корабли кампании.", error);
+    }
     return () => unsub();
   }, [refresh, codex, repository, campaignId]);
 
@@ -153,6 +169,8 @@ export function ShipPage({
 
       {!loaded ? (
         <p className="shp__empty">Загрузка корабля…</p>
+      ) : loadError ? (
+        <p className="shp__empty">{loadError}</p>
       ) : active ? (
         <section className="shp__active">
           <ShipCard ship={active} />
