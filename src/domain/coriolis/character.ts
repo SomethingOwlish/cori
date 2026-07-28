@@ -1,10 +1,11 @@
 /**
- * The Character model — the data behind a player card.
+ * Модель персонажа — данные за карточкой героя.
  *
- * This is the canonical shape persisted (e.g. to Firebase) and rendered by the
- * `PlayerCard` component. Derived values (hit points, mind points, encumbrance)
- * are computed from the stored scores rather than stored, so they can never
- * drift out of sync.
+ * Это каноническая форма, которую хранит репозиторий и отображает `PlayerCard`.
+ * Производные значения (здоровье, рассудок, нагрузка) вычисляются из хранимых
+ * характеристик, а не хранятся, чтобы они никогда не рассинхронизировались.
+ *
+ * Источник: ST3001 «Кориолис», гл. 2.
  */
 
 import {
@@ -14,25 +15,36 @@ import {
   type AttributeScores,
 } from "./attributes";
 import { baseSkillScores, type SkillScores } from "./skills";
-import type { ConceptKey } from "./concepts";
+import type { ConceptKey, TeamArchetypeKey, ShipPosition } from "./concepts";
 import type { IconKey } from "./icons";
-
-export type AgeGroup = "young" | "middleAged" | "old";
-
-export type Upbringing = "plebeian" | "stationary" | "privileged";
+import type { Upbringing, Parentage } from "./upbringing";
 
 export interface GearItem {
   name: string;
-  /** Encumbrance weight; most items count as 1. */
+  /** Вес в строках нагрузки: обычный предмет = 1, лёгкий = 0.5, тяжёлый ≥ 2. */
   weight?: number;
   notes?: string;
 }
 
 export interface Relationship {
-  /** Name of the person the character has a bond with. */
+  /** Имя персонажа, с которым установлена связь. */
   name: string;
-  /** Free-text description of the bond. */
+  /** Описание связи. */
   description: string;
+  /** Отмечен как «Друг» — ближайший товарищ. */
+  isFriend?: boolean;
+}
+
+/** Биография героя (на игровую механику влияет только воспитание и происхождение). */
+export interface Biography {
+  /** Родная планета (свободный текст). */
+  homeworld?: string;
+  /** Линия: зенитиец или первопоселенец (свободный текст). */
+  lineage?: string;
+  /** Воспитание — определяет пункты, репутацию и богатство. */
+  upbringing: Upbringing;
+  /** Человек или пасынок. */
+  parentage: Parentage;
 }
 
 export interface Character {
@@ -40,75 +52,87 @@ export interface Character {
   name: string;
   playerName?: string;
 
-  // Identity
+  // Биография
+  biography: Biography;
+
+  // Амплуа
   concept: ConceptKey;
-  ageGroup: AgeGroup;
-  upbringing: Upbringing;
-  /** Birth Icon of the Coriolis zodiac. */
-  icon: IconKey;
+  /** Ключ роли внутри амплуа. */
+  role: string;
+
+  // Внешность и история
   appearance?: string;
   personalProblem?: string;
 
-  // Core scores
+  // Лик-покровитель
+  icon: IconKey;
+
+  // Основные показатели
   attributes: AttributeScores;
   skills: SkillScores;
+  /** Достоинства (личное, командное, дар Лика, при необходимости стигма). Ключи из `talents.ts`/`icons.ts`. */
   talents: string[];
 
-  // Social / progression
+  // Команда
+  teamArchetype?: TeamArchetypeKey;
+  shipPosition?: ShipPosition;
+
+  // Социальное / развитие
   reputation: number;
+  /** Накопленные пункты опыта (5 → прокачка). */
   experience: number;
   relationships: Relationship[];
 
-  // Resources
+  // Ресурсы
   birr: number;
   gear: GearItem[];
 
-  // Live trackers (current values; maxima are derived)
+  // Текущие показатели (максимумы вычисляются)
   hitPointsCurrent: number;
   mindPointsCurrent: number;
   radiation: number;
 }
 
-/** Maximum hit points = Strength + Agility. */
+/** Запас здоровья = телосложение + ловкость. */
 export function maxHitPoints(attributes: AttributeScores): number {
   return attributes.strength + attributes.agility;
 }
 
-/** Maximum mind points = Wits + Empathy. */
+/** Запас рассудка = смекалка + эмпатия. */
 export function maxMindPoints(attributes: AttributeScores): number {
   return attributes.wits + attributes.empathy;
 }
 
-/** Carrying capacity in encumbrance points = Strength x 2. */
+/** Грузоподъёмность в строках нагрузки = телосложение × 2. */
 export function encumbranceLimit(attributes: AttributeScores): number {
   return attributes.strength * 2;
 }
 
-/** Total encumbrance currently carried. */
+/** Текущая нагрузка. */
 export function currentEncumbrance(gear: GearItem[]): number {
   return gear.reduce((sum, item) => sum + (item.weight ?? 1), 0);
 }
 
-/** Sum of the points spent above the attribute minimum. */
+/** Сумма пунктов, вложенных в характеристики (сами значения). */
 export function attributePointsSpent(attributes: AttributeScores): number {
   return ATTRIBUTE_KEYS.reduce(
-    (sum, key: AttributeKey) => sum + (attributes[key] - baseAttributeScores()[key]),
+    (sum, key: AttributeKey) => sum + attributes[key],
     0,
   );
 }
 
 /**
- * Builds a blank but structurally valid character. Callers are expected to fill
- * in identity, scores, and gear — typically via the generator.
+ * Создаёт пустого, но структурно валидного персонажа. Ожидается, что вызывающий
+ * заполнит биографию, показатели и снаряжение — обычно через генератор.
  */
 export function createBlankCharacter(id: string): Character {
   const attributes = baseAttributeScores();
   return {
     id,
     name: "",
+    biography: { upbringing: "plebeian", parentage: "human" },
     concept: "soldier",
-    ageGroup: "young",
-    upbringing: "plebeian",
+    role: "legionnaire",
     icon: "theTraveler",
     attributes,
     skills: baseSkillScores(),

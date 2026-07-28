@@ -1,125 +1,108 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  AGE_PROFILES,
   ATTRIBUTE_MAX,
   ATTRIBUTE_MIN,
   CONCEPTS,
   KEY_ATTRIBUTE_MAX,
-  UPBRINGING_BIRR,
+  KEY_SKILL_CREATION_MAX,
+  OTHER_SKILL_CREATION_MAX,
+  UPBRINGINGS,
+  keySkillsOf,
+  startingReputation,
   generateCharacter,
   type Character,
+  type SkillKey,
 } from "../../domain/coriolis";
-import { attributeCap, builderReducer, skillCap } from "./builderState";
+import { builderReducer } from "./builderState";
 
 function base(seed = 1): Character {
   return generateCharacter({ id: "test", seed, name: "Base" });
 }
 
 describe("builderReducer", () => {
-  it("loads a character wholesale", () => {
+  it("загружает персонажа целиком", () => {
     const replacement = generateCharacter({ id: "other", seed: 9 });
     expect(builderReducer(base(), { type: "load", character: replacement })).toBe(replacement);
   });
 
-  it("rerolls but keeps id and identity text", () => {
+  it("перегенерирует, сохраняя id и текст личности", () => {
     const start = base();
-    start.name = "Keep Name";
-    start.playerName = "Keep Player";
-
+    start.name = "Оставить имя";
+    start.playerName = "Игрок";
     const rerolled = builderReducer(start, { type: "reroll", seed: 123 });
-
     expect(rerolled.id).toBe(start.id);
-    expect(rerolled.name).toBe("Keep Name");
-    expect(rerolled.playerName).toBe("Keep Player");
-    // The build itself should match a direct generation with the same inputs.
     expect(rerolled).toEqual(
-      generateCharacter({ id: start.id, seed: 123, name: "Keep Name", playerName: "Keep Player" }),
+      generateCharacter({ id: start.id, seed: 123, name: "Оставить имя", playerName: "Игрок" }),
     );
   });
 
-  it("sets the name field", () => {
-    const next = builderReducer(base(), { type: "setText", field: "name", value: "Ravok" });
-    expect(next.name).toBe("Ravok");
+  it("устанавливает имя", () => {
+    const next = builderReducer(base(), { type: "setText", field: "name", value: "Равок" });
+    expect(next.name).toBe("Равок");
   });
 
-  it("clears optional text fields when set to empty", () => {
-    const start = { ...base(), appearance: "scarred" };
+  it("очищает необязательное текстовое поле при пустом значении", () => {
+    const start = { ...base(), appearance: "шрам" };
     const next = builderReducer(start, { type: "setText", field: "appearance", value: "" });
     expect(next.appearance).toBeUndefined();
   });
 
-  it("syncs reputation when the age group changes", () => {
-    const next = builderReducer(base(), { type: "setAgeGroup", ageGroup: "old" });
-    expect(next.ageGroup).toBe("old");
-    expect(next.reputation).toBe(AGE_PROFILES.old.startingReputation);
-  });
-
-  it("syncs birr when the upbringing changes", () => {
+  it("синхронизирует богатство и репутацию при смене воспитания", () => {
     const next = builderReducer(base(), { type: "setUpbringing", upbringing: "privileged" });
-    expect(next.upbringing).toBe("privileged");
-    expect(next.birr).toBe(UPBRINGING_BIRR.privileged);
+    expect(next.biography.upbringing).toBe("privileged");
+    expect(next.birr).toBe(UPBRINGINGS.privileged.birr);
+    expect(next.reputation).toBe(
+      startingReputation("privileged", next.biography.parentage, next.concept),
+    );
   });
 
-  it("adjusts an attribute within its cap", () => {
-    // Use a concept whose key attribute is strength (soldier) and edit a non-key attr.
-    const start = { ...base(), concept: "soldier" as const };
-    start.attributes = { ...start.attributes, wits: ATTRIBUTE_MIN };
+  it("не позволяет пасынку остаться аристократом", () => {
+    const priv = builderReducer(base(), { type: "setUpbringing", upbringing: "privileged" });
+    const stray = builderReducer(priv, { type: "setParentage", parentage: "stray" });
+    expect(stray.biography.upbringing).not.toBe("privileged");
+    expect(stray.biography.parentage).toBe("stray");
+  });
 
+  it("держит характеристику в пределах, а ключевую поднимает выше", () => {
+    const start = { ...base(), concept: "soldier" as const, role: "legionnaire" };
+    // Солдат: ключевая — ловкость. Неключевая (смекалка) ограничена 4.
+    start.attributes = { ...start.attributes, wits: ATTRIBUTE_MIN };
     const up = builderReducer(start, { type: "adjustAttribute", key: "wits", delta: 10 });
     expect(up.attributes.wits).toBe(ATTRIBUTE_MAX);
 
-    const down = builderReducer(up, { type: "adjustAttribute", key: "wits", delta: -10 });
-    expect(down.attributes.wits).toBe(ATTRIBUTE_MIN);
-  });
-
-  it("lets the key attribute reach the higher cap", () => {
-    const start = { ...base(), concept: "soldier" as const };
-    const key = CONCEPTS.soldier.keyAttribute; // strength
-    start.attributes = { ...start.attributes, [key]: ATTRIBUTE_MIN };
-
-    const next = builderReducer(start, { type: "adjustAttribute", key, delta: 10 });
+    const key = CONCEPTS.soldier.keyAttribute; // agility
+    const start2 = { ...base(), concept: "soldier" as const };
+    start2.attributes = { ...start2.attributes, [key]: ATTRIBUTE_MIN };
+    const next = builderReducer(start2, { type: "adjustAttribute", key, delta: 10 });
     expect(next.attributes[key]).toBe(KEY_ATTRIBUTE_MAX);
   });
 
-  it("adjusts a skill within the age cap", () => {
-    const start = { ...base(), ageGroup: "young" as const };
-    start.skills = { ...start.skills, pilot: 0 };
+  it("держит навык в пределах создания (ключевой ≤3, прочий ≤1)", () => {
+    const start = { ...base(), concept: "pilot" as const, role: "ace" };
+    const keys = keySkillsOf("pilot", "ace");
+    const keySkill = [...keys][0] as SkillKey;
+    const nonKey = (Object.keys(start.skills) as SkillKey[]).find((k) => !keys.has(k))!;
 
-    const up = builderReducer(start, { type: "adjustSkill", key: "pilot", delta: 10 });
-    expect(up.skills.pilot).toBe(AGE_PROFILES.young.maxSkillValue);
-
-    const down = builderReducer(up, { type: "adjustSkill", key: "pilot", delta: -10 });
-    expect(down.skills.pilot).toBe(0);
+    start.skills = { ...start.skills, [keySkill]: 0, [nonKey]: 0 };
+    const upKey = builderReducer(start, { type: "adjustSkill", key: keySkill, delta: 10 });
+    expect(upKey.skills[keySkill]).toBe(KEY_SKILL_CREATION_MAX);
+    const upOther = builderReducer(start, { type: "adjustSkill", key: nonKey, delta: 10 });
+    expect(upOther.skills[nonKey]).toBe(OTHER_SKILL_CREATION_MAX);
   });
 
-  it("toggles a talent on and off", () => {
+  it("переключает достоинство", () => {
     const start = { ...base(), talents: [] };
-    const added = builderReducer(start, { type: "toggleTalent", key: "defender" });
-    expect(added.talents).toContain("defender");
-
-    const removed = builderReducer(added, { type: "toggleTalent", key: "defender" });
-    expect(removed.talents).not.toContain("defender");
+    const added = builderReducer(start, { type: "toggleTalent", key: "tough" });
+    expect(added.talents).toContain("tough");
+    const removed = builderReducer(added, { type: "toggleTalent", key: "tough" });
+    expect(removed.talents).not.toContain("tough");
   });
 
-  it("does not mutate the input character", () => {
+  it("не мутирует исходного персонажа", () => {
     const start = base();
     const before = structuredClone(start);
     builderReducer(start, { type: "adjustAttribute", key: "strength", delta: 1 });
     expect(start).toEqual(before);
-  });
-});
-
-describe("caps", () => {
-  it("attributeCap raises the concept's key attribute", () => {
-    const key = CONCEPTS.pilot.keyAttribute;
-    expect(attributeCap("pilot", key)).toBe(KEY_ATTRIBUTE_MAX);
-    const other = key === "strength" ? "wits" : "strength";
-    expect(attributeCap("pilot", other)).toBe(ATTRIBUTE_MAX);
-  });
-
-  it("skillCap follows the age profile", () => {
-    expect(skillCap("young")).toBe(AGE_PROFILES.young.maxSkillValue);
-    expect(skillCap("old")).toBe(AGE_PROFILES.old.maxSkillValue);
   });
 });

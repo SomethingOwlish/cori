@@ -1,35 +1,35 @@
 /**
- * Firestore (de)serialization for `Character`.
+ * (Де)сериализация `Character` для Firestore.
  *
- * These are pure functions with no Firebase dependency, so they can be unit
- * tested in isolation and reused by any document store. The document keeps a
- * `schemaVersion` so future shape changes can be migrated on read.
+ * Это чистые функции без зависимости от Firebase, поэтому их можно тестировать
+ * изолированно и переиспользовать в любом документном хранилище. Документ
+ * хранит `schemaVersion`, чтобы будущие изменения формы можно было мигрировать
+ * при чтении.
  *
- * The domain `id` is intentionally *not* part of the stored document: in
- * Firestore it is the document key, supplied separately on read. Optional
- * fields that are `undefined` are omitted entirely, because Firestore rejects
- * `undefined` values.
+ * Доменный `id` намеренно НЕ входит в документ: в Firestore это ключ документа,
+ * который передаётся отдельно при чтении. Необязательные поля со значением
+ * `undefined` полностью опускаются, так как Firestore не принимает `undefined`.
  */
 
 import type {
-  AgeGroup,
-  AttributeScores,
+  Biography,
   Character,
   ConceptKey,
   GearItem,
   IconKey,
   Relationship,
-  SkillScores,
-  Upbringing,
+  ShipPosition,
+  TeamArchetypeKey,
 } from "../../domain/coriolis";
+import type { AttributeScores } from "../../domain/coriolis";
+import type { SkillScores } from "../../domain/coriolis";
 
-/** Bump when the persisted shape changes; `documentToCharacter` migrates old docs. */
-export const CURRENT_SCHEMA_VERSION = 1;
+/** Увеличивай при изменении формы; `documentToCharacter` мигрирует старые документы. */
+export const CURRENT_SCHEMA_VERSION = 2;
 
 /**
- * The persisted document shape — a `Character` without its `id`, tagged with a
- * schema version. Mirrors the domain model field-for-field so the mapping stays
- * mechanical and easy to audit.
+ * Форма хранимого документа — `Character` без `id`, с версией схемы. Повторяет
+ * доменную модель поле в поле, чтобы отображение оставалось механическим.
  */
 export interface CharacterDocument {
   schemaVersion: number;
@@ -37,9 +37,10 @@ export interface CharacterDocument {
   name: string;
   playerName?: string;
 
+  biography: Biography;
+
   concept: ConceptKey;
-  ageGroup: AgeGroup;
-  upbringing: Upbringing;
+  role: string;
   icon: IconKey;
   appearance?: string;
   personalProblem?: string;
@@ -47,6 +48,9 @@ export interface CharacterDocument {
   attributes: AttributeScores;
   skills: SkillScores;
   talents: string[];
+
+  teamArchetype?: TeamArchetypeKey;
+  shipPosition?: ShipPosition;
 
   reputation: number;
   experience: number;
@@ -60,16 +64,17 @@ export interface CharacterDocument {
   radiation: number;
 }
 
-/** Serializes a domain `Character` into a Firestore document (id stripped). */
+/** Сериализует доменного `Character` в документ Firestore (без `id`). */
 export function characterToDocument(character: Character): CharacterDocument {
   const doc: CharacterDocument = {
     schemaVersion: CURRENT_SCHEMA_VERSION,
 
     name: character.name,
 
+    biography: { ...character.biography },
+
     concept: character.concept,
-    ageGroup: character.ageGroup,
-    upbringing: character.upbringing,
+    role: character.role,
     icon: character.icon,
 
     attributes: { ...character.attributes },
@@ -88,17 +93,19 @@ export function characterToDocument(character: Character): CharacterDocument {
     radiation: character.radiation,
   };
 
-  // Only include optional string fields when set — Firestore rejects `undefined`.
+  // Необязательные поля включаем, только если заданы — Firestore не примет undefined.
   if (character.playerName !== undefined) doc.playerName = character.playerName;
   if (character.appearance !== undefined) doc.appearance = character.appearance;
   if (character.personalProblem !== undefined) doc.personalProblem = character.personalProblem;
+  if (character.teamArchetype !== undefined) doc.teamArchetype = character.teamArchetype;
+  if (character.shipPosition !== undefined) doc.shipPosition = character.shipPosition;
 
   return doc;
 }
 
 /**
- * Rebuilds a domain `Character` from its document id and stored data. Documents
- * from older schema versions are upgraded by `migrate` before mapping.
+ * Восстанавливает доменного `Character` из id документа и хранимых данных.
+ * Документы старых версий приводятся `migrate` к текущей форме.
  */
 export function documentToCharacter(id: string, raw: CharacterDocument): Character {
   const doc = migrate(raw);
@@ -107,9 +114,10 @@ export function documentToCharacter(id: string, raw: CharacterDocument): Charact
     id,
     name: doc.name,
 
+    biography: { ...doc.biography },
+
     concept: doc.concept,
-    ageGroup: doc.ageGroup,
-    upbringing: doc.upbringing,
+    role: doc.role,
     icon: doc.icon,
 
     attributes: { ...doc.attributes },
@@ -131,15 +139,23 @@ export function documentToCharacter(id: string, raw: CharacterDocument): Charact
   if (doc.playerName !== undefined) character.playerName = doc.playerName;
   if (doc.appearance !== undefined) character.appearance = doc.appearance;
   if (doc.personalProblem !== undefined) character.personalProblem = doc.personalProblem;
+  if (doc.teamArchetype !== undefined) character.teamArchetype = doc.teamArchetype;
+  if (doc.shipPosition !== undefined) character.shipPosition = doc.shipPosition;
 
   return character;
 }
 
 /**
- * Brings a stored document up to `CURRENT_SCHEMA_VERSION`. Today there is only
- * one version, so this normalizes the tag; new versions add cases here.
+ * Приводит хранимый документ к `CURRENT_SCHEMA_VERSION`. Документы версии 1
+ * (со старой возрастной моделью) приводятся к воспитанию по умолчанию.
  */
 function migrate(doc: CharacterDocument): CharacterDocument {
-  // Future: `if (doc.schemaVersion < 2) { ...transform... }`
-  return { ...doc, schemaVersion: CURRENT_SCHEMA_VERSION };
+  const next = { ...doc };
+  // Версия 1 использовала ageGroup/upbringing на верхнем уровне вместо biography.
+  if (!next.biography) {
+    const legacy = doc as unknown as { upbringing?: Biography["upbringing"] };
+    next.biography = { upbringing: legacy.upbringing ?? "plebeian", parentage: "human" };
+  }
+  if (!next.role) next.role = "";
+  return { ...next, schemaVersion: CURRENT_SCHEMA_VERSION };
 }

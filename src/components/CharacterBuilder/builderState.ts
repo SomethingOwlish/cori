@@ -1,58 +1,82 @@
 /**
- * Pure state logic for the character builder.
+ * Чистая логика состояния мастера создания персонажа.
  *
- * All edits go through `builderReducer`, which returns a new `Character` with
- * the change applied and bounds enforced. Keeping this free of React makes the
- * editing rules (clamping to attribute/skill caps, syncing age/upbringing
- * defaults) straightforward to unit test. Validation itself is delegated to the
- * domain's `assessCharacter`.
+ * Все правки проходят через `builderReducer`, который возвращает нового
+ * `Character` с применённым изменением и соблюдёнными границами. Отсутствие
+ * React делает правила редактирования (ограничения характеристик/навыков,
+ * пересчёт репутации и богатства) удобными для юнит-тестов. Сама валидация
+ * делегируется доменной `assessCharacter`.
  */
 
 import {
-  AGE_PROFILES,
-  ATTRIBUTE_MAX,
   ATTRIBUTE_MIN,
   CONCEPTS,
-  KEY_ATTRIBUTE_MAX,
   SKILL_MIN,
-  UPBRINGING_BIRR,
+  UPBRINGINGS,
+  attributeCreationCap,
+  skillCreationCap,
+  startingReputation,
   generateCharacter,
-  type AgeGroup,
   type AttributeKey,
   type Character,
   type ConceptKey,
   type IconKey,
   type SkillKey,
+  type TeamArchetypeKey,
   type Upbringing,
+  type Parentage,
+  type ShipPosition,
 } from "../../domain/coriolis";
 
-/** Free-text identity fields the builder can edit directly. */
+/** Свободные текстовые поля, которые мастер правит напрямую. */
 export type TextField = "name" | "playerName" | "appearance" | "personalProblem";
+export type BioTextField = "homeworld" | "lineage";
 
 export type BuilderAction =
   | { type: "load"; character: Character }
   | { type: "reroll"; seed: number }
   | { type: "setText"; field: TextField; value: string }
+  | { type: "setBioText"; field: BioTextField; value: string }
   | { type: "setConcept"; concept: ConceptKey }
-  | { type: "setAgeGroup"; ageGroup: AgeGroup }
+  | { type: "setRole"; role: string }
   | { type: "setUpbringing"; upbringing: Upbringing }
+  | { type: "setParentage"; parentage: Parentage }
   | { type: "setIcon"; icon: IconKey }
+  | { type: "setTeamArchetype"; team: TeamArchetypeKey }
+  | { type: "setShipPosition"; position: ShipPosition }
   | { type: "adjustAttribute"; key: AttributeKey; delta: number }
   | { type: "adjustSkill"; key: SkillKey; delta: number }
-  | { type: "toggleTalent"; key: string };
+  | { type: "toggleTalent"; key: string }
+  | { type: "patch"; patch: Partial<Character> };
 
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
 }
 
-/** The highest an attribute may reach for a given concept (key attribute is +1). */
-export function attributeCap(concept: ConceptKey, key: AttributeKey): number {
-  return key === CONCEPTS[concept].keyAttribute ? KEY_ATTRIBUTE_MAX : ATTRIBUTE_MAX;
+/** Пересчитывает репутацию по биографии и амплуа. */
+function withReputation(c: Character): Character {
+  return {
+    ...c,
+    reputation: startingReputation(c.biography.upbringing, c.biography.parentage, c.concept),
+  };
 }
 
-/** The highest any single skill may reach for a given age group. */
-export function skillCap(ageGroup: AgeGroup): number {
-  return AGE_PROFILES[ageGroup].maxSkillValue;
+/** Обрезает навыки под ограничения выбранной роли (ключевые ≤3, прочие ≤1). */
+function clampSkills(c: Character): Character {
+  const skills = { ...c.skills };
+  for (const key of Object.keys(skills) as SkillKey[]) {
+    skills[key] = clamp(skills[key], SKILL_MIN, skillCreationCap(c.concept, c.role, key));
+  }
+  return { ...c, skills };
+}
+
+/** Обрезает характеристики под ограничения амплуа (ключевая ≤5, прочие ≤4). */
+function clampAttributes(c: Character): Character {
+  const attributes = { ...c.attributes };
+  for (const key of Object.keys(attributes) as AttributeKey[]) {
+    attributes[key] = clamp(attributes[key], ATTRIBUTE_MIN, attributeCreationCap(c.concept, key));
+  }
+  return { ...c, attributes };
 }
 
 export function builderReducer(character: Character, action: BuilderAction): Character {
@@ -61,59 +85,74 @@ export function builderReducer(character: Character, action: BuilderAction): Cha
       return action.character;
 
     case "reroll":
-      // Preserve id and identity text; reroll everything the seed drives.
       return generateCharacter({
         id: character.id,
         seed: action.seed,
-        name: character.name,
+        name: character.name || undefined,
         playerName: character.playerName,
       });
 
     case "setText": {
       const value = action.value;
       if (action.field === "name") return { ...character, name: value };
-      // Optional fields: an empty string clears them back to undefined.
       return { ...character, [action.field]: value === "" ? undefined : value };
     }
 
-    case "setConcept":
-      return { ...character, concept: action.concept };
+    case "setBioText": {
+      const value = action.value === "" ? undefined : action.value;
+      return { ...character, biography: { ...character.biography, [action.field]: value } };
+    }
 
-    case "setAgeGroup":
-      // Age drives the reputation baseline; keep it in sync on change.
-      return {
-        ...character,
-        ageGroup: action.ageGroup,
-        reputation: AGE_PROFILES[action.ageGroup].startingReputation,
-      };
+    case "setConcept": {
+      // Амплуа задаёт первую роль по умолчанию и меняет пределы — обрезаем.
+      const role = CONCEPTS[action.concept].roles[0].key;
+      let next: Character = { ...character, concept: action.concept, role };
+      next = clampAttributes(next);
+      next = clampSkills(next);
+      return withReputation(next);
+    }
 
-    case "setUpbringing":
-      // Upbringing drives starting money; keep it in sync on change.
-      return {
-        ...character,
-        upbringing: action.upbringing,
-        birr: UPBRINGING_BIRR[action.upbringing],
-      };
+    case "setRole":
+      return clampSkills({ ...character, role: action.role });
+
+    case "setUpbringing": {
+      const profile = UPBRINGINGS[action.upbringing];
+      let bio = { ...character.biography, upbringing: action.upbringing };
+      // Пасынок не может быть аристократом.
+      if (bio.parentage === "stray" && action.upbringing === "privileged") {
+        bio = { ...bio, parentage: "human" };
+      }
+      return withReputation({ ...character, biography: bio, birr: profile.birr });
+    }
+
+    case "setParentage": {
+      let bio = { ...character.biography, parentage: action.parentage };
+      if (action.parentage === "stray" && bio.upbringing === "privileged") {
+        bio = { ...bio, upbringing: "stationary" };
+      }
+      const birr = UPBRINGINGS[bio.upbringing].birr;
+      return withReputation({ ...character, biography: bio, birr });
+    }
 
     case "setIcon":
       return { ...character, icon: action.icon };
 
+    case "setTeamArchetype":
+      return { ...character, teamArchetype: action.team };
+
+    case "setShipPosition":
+      return { ...character, shipPosition: action.position };
+
     case "adjustAttribute": {
-      const cap = attributeCap(character.concept, action.key);
+      const cap = attributeCreationCap(character.concept, action.key);
       const next = clamp(character.attributes[action.key] + action.delta, ATTRIBUTE_MIN, cap);
-      return {
-        ...character,
-        attributes: { ...character.attributes, [action.key]: next },
-      };
+      return { ...character, attributes: { ...character.attributes, [action.key]: next } };
     }
 
     case "adjustSkill": {
-      const cap = skillCap(character.ageGroup);
+      const cap = skillCreationCap(character.concept, character.role, action.key);
       const next = clamp(character.skills[action.key] + action.delta, SKILL_MIN, cap);
-      return {
-        ...character,
-        skills: { ...character.skills, [action.key]: next },
-      };
+      return { ...character, skills: { ...character.skills, [action.key]: next } };
     }
 
     case "toggleTalent": {
@@ -124,8 +163,10 @@ export function builderReducer(character: Character, action: BuilderAction): Cha
       return { ...character, talents };
     }
 
+    case "patch":
+      return { ...character, ...action.patch };
+
     default: {
-      // Exhaustiveness guard: a new action type without a case fails to compile.
       const _never: never = action;
       return _never;
     }

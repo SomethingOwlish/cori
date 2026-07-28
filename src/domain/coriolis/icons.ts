@@ -1,40 +1,145 @@
 /**
- * The Icons of the Coriolis zodiac.
+ * Девять Ликов Третьего Горизонта.
  *
- * Every character is born under one of the nine Icons. Mechanically an Icon is
- * simply a birth sign the player can invoke; here we model it as a key, a
- * display name, and a one-word association used for flavour on the card. No
- * rulebook prose is reproduced.
+ * Каждый герой рождается под знаком одного из Ликов и получает его дар —
+ * особое достоинство. Лик-покровитель определяется случайно броском d66
+ * (табл. 2.5). За каждым Ликом закреплены навыки: молитву возносят Лику,
+ * отвечающему за проверяемый навык (табл. 3.2).
+ *
+ * Источник: ST3001 «Кориолис», гл. 2 (стр. 25–26), гл. 4 (стр. 71–72).
  */
+
+import type { SkillKey } from "./skills";
 
 export type IconKey =
   | "ladyOfTears"
+  | "theDancer"
   | "theGambler"
+  | "theMerchant"
   | "theDeckhand"
   | "theTraveler"
-  | "theMerchant"
-  | "theDancer"
-  | "theTwoDjinns"
+  | "theMessenger"
   | "theJudge"
   | "theFaceless";
 
 export interface IconDef {
   key: IconKey;
   name: string;
-  /** A single associated theme, useful as a card subtitle. */
-  theme: string;
+  /** Символ Лика. */
+  symbol: string;
+  /** Краткое описание Лика. */
+  description: string;
+  /** Дар Лика — достоинство, которое получает рождённый под его знаком. */
+  gift: string;
+  /** Навыки, за которые отвечает Лик (для молитв). */
+  skills: SkillKey[];
+  /**
+   * Диапазон броска d66 (табл. 2.5), обе границы включительно.
+   * d66 — два d6: первый кубик — десятки, второй — единицы (11..66).
+   */
+  d66: [number, number];
 }
 
 export const ICONS: Record<IconKey, IconDef> = {
-  ladyOfTears: { key: "ladyOfTears", name: "The Lady of Tears", theme: "Mercy" },
-  theGambler: { key: "theGambler", name: "The Gambler", theme: "Fortune" },
-  theDeckhand: { key: "theDeckhand", name: "The Deckhand", theme: "Toil" },
-  theTraveler: { key: "theTraveler", name: "The Traveler", theme: "Journeys" },
-  theMerchant: { key: "theMerchant", name: "The Merchant", theme: "Trade" },
-  theDancer: { key: "theDancer", name: "The Dancer", theme: "Passion" },
-  theTwoDjinns: { key: "theTwoDjinns", name: "The Two Djinns", theme: "Duality" },
-  theJudge: { key: "theJudge", name: "The Judge", theme: "Order" },
-  theFaceless: { key: "theFaceless", name: "The Faceless", theme: "Mystery" },
+  ladyOfTears: {
+    key: "ladyOfTears",
+    name: "Владычица Слёз",
+    symbol: "слеза",
+    description: "Утешает живых и провожает души умерших по дороге к престолу Судьи.",
+    gift: "Утратив боеспособность, можешь немедленно восстановить 1 пункт здоровья или рассудка, либо проигнорировать эффект только что полученной травмы.",
+    skills: ["medicurgy"],
+    d66: [11, 14],
+  },
+  theDancer: {
+    key: "theDancer",
+    name: "Танцор",
+    symbol: "развевающиеся ленты",
+    description: "Олицетворение творческого вдохновения и упорства; с лирой становится Музыкантом — воплощением плотского влечения.",
+    gift: "Можешь уклониться от любой атаки, не получив урона (после успешной атаки противника, но до проверки укрытия и брони).",
+    skills: ["dexterity", "meleeCombat"],
+    d66: [15, 22],
+  },
+  theGambler: {
+    key: "theGambler",
+    name: "Игрок",
+    symbol: "игральные кости",
+    description: "Покровитель авантюристов и искателей приключений.",
+    gift: "Без броска добиваешься безусловного успеха (как три шестёрки) при проверке любого навыка (специального — только если его значение выше 0).",
+    skills: ["observation", "pilot"],
+    d66: [23, 26],
+  },
+  theMerchant: {
+    key: "theMerchant",
+    name: "Купец",
+    symbol: "кубок",
+    description: "Воплощение благосостояния, процветания и успеха.",
+    gift: "Если не хватает денег на снаряжение или оборудование корабля, можешь получить выгодный заём (вернуть его придётся в оговорённый срок).",
+    skills: ["manipulation"],
+    d66: [31, 34],
+  },
+  theDeckhand: {
+    key: "theDeckhand",
+    name: "Юнга",
+    symbol: "ключ",
+    description: "Благодать Юнги простирается над домами и кораблями, где соблюдают порядок и чистоту.",
+    gift: "Если запас прочности или энергии корабля упал до нуля, можешь мгновенно восстановить d6 пунктов того или другого.",
+    skills: ["force"],
+    d66: [35, 42],
+  },
+  theTraveler: {
+    key: "theTraveler",
+    name: "Странник",
+    symbol: "корабль",
+    description: "Покровитель вольных торговцев, исследователей и колонистов.",
+    gift: "Выбирая между двумя вариантами, можешь спросить у ведущего, какой выигрышнее — он обязан честно ответить.",
+    skills: ["survival", "culture"],
+    d66: [43, 46],
+  },
+  theMessenger: {
+    key: "theMessenger",
+    name: "Вестник",
+    symbol: "свиток",
+    description: "Посредник между миром Ликов и миром людей.",
+    gift: "Можешь убедить любого персонажа поступить как нужно тебе без проверки влияния (просьба должна быть разумной и не против его интересов).",
+    skills: ["dataDjinn", "science", "technology"],
+    d66: [51, 54],
+  },
+  theJudge: {
+    key: "theJudge",
+    name: "Судья",
+    symbol: "меч",
+    description: "Вотчина Судьи — правосудие и возмездие.",
+    gift: "Если твоя атака попадает в цель, жертва получает травму, даже если броня или укрытие поглотили урон.",
+    skills: ["rangedCombat", "command"],
+    d66: [55, 62],
+  },
+  theFaceless: {
+    key: "theFaceless",
+    name: "Незримый",
+    symbol: "нет символа",
+    description: "Окутан покровом тайны, изображать его не принято.",
+    gift: "Можешь слегка изменить обстоятельства сцены в свою пользу (изменения косметические, а эффект — опосредованный).",
+    skills: ["infiltration", "mysticism"],
+    d66: [63, 66],
+  },
 };
 
 export const ICON_KEYS: readonly IconKey[] = Object.keys(ICONS) as IconKey[];
+
+/**
+ * Определяет Лика-покровителя по результату броска d66 (11..66).
+ * Пропущенные комбинации (17–21, 27–30, …) округляются к ближайшему
+ * заполненному диапазону сверху, как принято при чтении таблицы d66.
+ */
+export function iconForD66Roll(roll: number): IconKey {
+  for (const key of ICON_KEYS) {
+    const [lo, hi] = ICONS[key].d66;
+    if (roll >= lo && roll <= hi) return key;
+  }
+  // Если выпала «дырка» в таблице — берём ближайший диапазон.
+  let best: IconKey = "ladyOfTears";
+  for (const key of ICON_KEYS) {
+    if (ICONS[key].d66[0] <= roll) best = key;
+  }
+  return best;
+}

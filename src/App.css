@@ -1,24 +1,165 @@
-/* App shell layout. Individual components own their own styling. */
+/* Оболочка приложения. Тема «Кориолиса» — тёмный космос и золото Ликов. */
+
+:root {
+  --bg: #0e1420;
+  --bg-panel: #172032;
+  --bg-panel-2: #1e2a40;
+  --line: #2c3a54;
+  --text: #e7edf7;
+  --muted: #9fb0c9;
+  --gold: #e3b04b;
+  --gold-dim: #b8893a;
+  --ok: #4bd08a;
+  --bad: #ef6a6a;
+  --accent: #5aa9e6;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  line-height: 1.5;
+}
 
 .app {
-  max-width: 78rem;
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 2rem 1.5rem 4rem;
-  font-family: system-ui, -apple-system, sans-serif;
-  color: #e6e9ef;
+  padding: 1.25rem;
 }
 
 .app__header {
-  margin-bottom: 1.5rem;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 0.75rem;
+  margin-bottom: 1rem;
 }
 
 .app__title {
   margin: 0;
-  font-size: 2rem;
+  font-size: 1.6rem;
+  color: var(--gold);
   letter-spacing: 0.02em;
 }
 
 .app__tagline {
-  margin: 0.2rem 0 0;
-  color: #7a8291;
+  margin: 0.15rem 0 0.75rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.app__tabs {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.app__tab {
+  background: var(--bg-panel);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 8px 8px 0 0;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+
+.app__tab--active {
+  background: var(--gold);
+  color: #1a1206;
+  border-color: var(--gold);
+  font-weight: 600;
+}
+
+.app__sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-width: 720px;
+}
+
+.app__sheet-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  background: var(--bg-panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0.6rem 0.8rem;
+}
+
+.app__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.9rem;
+}
+
+.app__readonly {
+  background: var(--bg-panel-2);
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  padding: 0.6rem 0.8rem;
+  color: var(--muted);
+  margin: 0;
+}
+
+.app__gm {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  align-items: center;
+  background: rgba(227, 176, 75, 0.08);
+  border: 1px solid var(--gold-dim);
+  border-radius: 8px;
+  padding: 0.6rem 0.8rem;
+}
+
+.app__gm-title {
+  width: 100%;
+  color: var(--gold);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.app__tracker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.app__tracker b {
+  color: var(--text);
+  min-width: 1.5rem;
+  text-align: center;
+}
+
+button {
+  cursor: pointer;
+}
+
+.app__gm button,
+.app__tracker button,
+.app__sheet-controls button {
+  background: var(--bg-panel-2);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.9rem;
+}
+
+select,
+input {
+  background: var(--bg-panel-2);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 0.3rem 0.5rem;
+  font-size: 0.9rem;
 }

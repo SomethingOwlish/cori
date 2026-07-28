@@ -1,29 +1,54 @@
 /**
- * Coriolis attributes.
+ * Характеристики персонажа «Кориолис. Третий Горизонт».
  *
- * The Year Zero Engine used by Coriolis: The Third Horizon defines four core
- * attributes. Values here model the *mechanics* (ranges and keys) rather than
- * reproducing any rulebook text.
+ * У героя четыре характеристики (природные данные). Значение каждой — от 1 до 5,
+ * чем выше, тем лучше. При создании персонажа очки характеристик распределяются
+ * так, что в каждую вкладывается от 2 до 4 пунктов, и только в ключевую
+ * характеристику выбранного амплуа можно вложить до 5 (см. `generation.ts`).
+ *
+ * Источник: ST3001 «Кориолис», гл. 2, стр. 23.
  */
 
 export type AttributeKey = "strength" | "agility" | "wits" | "empathy";
 
 export interface AttributeDef {
   key: AttributeKey;
-  /** Display name. */
+  /** Название на русском. */
   name: string;
-  /** Short label used on the compact player card. */
+  /** Короткая метка для компактной карточки. */
   abbreviation: string;
+  /** Пояснение, что описывает характеристика (по корбуку). */
+  description: string;
 }
 
 export const ATTRIBUTES: Record<AttributeKey, AttributeDef> = {
-  strength: { key: "strength", name: "Strength", abbreviation: "STR" },
-  agility: { key: "agility", name: "Agility", abbreviation: "AGI" },
-  wits: { key: "wits", name: "Wits", abbreviation: "WIT" },
-  empathy: { key: "empathy", name: "Empathy", abbreviation: "EMP" },
+  strength: {
+    key: "strength",
+    name: "Телосложение",
+    abbreviation: "ТЕЛ",
+    description: "Сочетание грубой физической силы и выносливости.",
+  },
+  agility: {
+    key: "agility",
+    name: "Ловкость",
+    abbreviation: "ЛОВ",
+    description: "Координация движений и моторика тела.",
+  },
+  wits: {
+    key: "wits",
+    name: "Смекалка",
+    abbreviation: "СМЕ",
+    description: "Интеллект, внимание и изобретательность.",
+  },
+  empathy: {
+    key: "empathy",
+    name: "Эмпатия",
+    abbreviation: "ЭМП",
+    description: "Харизма, привлекательность и умение манипулировать окружающими.",
+  },
 };
 
-/** Stable ordering for iteration and rendering. */
+/** Устойчивый порядок для перебора и отображения. */
 export const ATTRIBUTE_KEYS: readonly AttributeKey[] = [
   "strength",
   "agility",
@@ -32,20 +57,24 @@ export const ATTRIBUTE_KEYS: readonly AttributeKey[] = [
 ];
 
 /**
- * Attribute bounds at character creation for the human species.
+ * Границы характеристик при создании персонажа (человек).
  *
- * NOTE: These are the generation-rule constants. They are collected here so
- * they can be verified against the current rulebook printing in one place.
+ * В каждую характеристику вкладывается от 2 до 4 пунктов; ключевая
+ * характеристика амплуа может достигать 5. В ходе игры значение остаётся
+ * в пределах шкалы 1–5.
  */
 export const ATTRIBUTE_MIN = 2;
 export const ATTRIBUTE_MAX = 4;
-/** The concept's key attribute may be raised one step higher than the rest. */
+/** Ключевую характеристику амплуа можно поднять на ступень выше остальных. */
 export const KEY_ATTRIBUTE_MAX = 5;
+/** Абсолютные границы шкалы характеристики (используются в игре). */
+export const ATTRIBUTE_SCALE_MIN = 1;
+export const ATTRIBUTE_SCALE_MAX = 5;
 
-/** A full attribute block. */
+/** Полный блок характеристик. */
 export type AttributeScores = Record<AttributeKey, number>;
 
-/** Creates an attribute block with every attribute at the minimum value. */
+/** Блок характеристик с минимальным значением 2 в каждой. */
 export function baseAttributeScores(): AttributeScores {
   return {
     strength: ATTRIBUTE_MIN,
