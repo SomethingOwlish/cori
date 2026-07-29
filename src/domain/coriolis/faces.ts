@@ -15,6 +15,20 @@ export interface FaceLocation {
   placeId: string;
 }
 
+/** Compact NPC sheet, based on the «Бланк персонажей ведущего». */
+export interface NpcStatBlock {
+  physique: string;
+  agility: string;
+  wits: string;
+  empathy: string;
+  health: string;
+  mind: string;
+  skills?: string;
+  talents?: string;
+  weapons?: string;
+  equipment?: string;
+}
+
 export interface FaceEntry {
   id: string;
   type: FaceType;
@@ -23,9 +37,11 @@ export interface FaceEntry {
   /** Visible only to the game master. */
   masterDescription?: string;
   imageUrl?: string;
-  /** Free-form stat block, intentionally optional. */
-  statBlock?: string;
+  /** Optional, structured NPC stat block. */
+  statBlock?: NpcStatBlock;
   lastLocation?: FaceLocation;
   /** New entries start hidden, and must be explicitly revealed by the GM. */
   hidden: boolean;
+  /** A deceased entity remains in the archive but is visually marked. */
+  dead?: boolean;
 }

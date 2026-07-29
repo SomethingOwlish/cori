@@ -10,6 +10,7 @@ const converter: FirestoreDataConverter<FaceEntry> = {
     if (entry.imageUrl) out.imageUrl = entry.imageUrl;
     if (entry.statBlock) out.statBlock = entry.statBlock;
     if (entry.lastLocation) out.lastLocation = entry.lastLocation;
+    if (entry.dead) out.dead = true;
     return out;
   },
   fromFirestore(snapshot: QueryDocumentSnapshot): FaceEntry {
@@ -23,12 +24,20 @@ const converter: FirestoreDataConverter<FaceEntry> = {
       description: typeof data.description === "string" ? data.description : "",
       masterDescription: typeof data.masterDescription === "string" ? data.masterDescription : undefined,
       imageUrl: typeof data.imageUrl === "string" ? data.imageUrl : undefined,
-      statBlock: typeof data.statBlock === "string" ? data.statBlock : undefined,
+      statBlock: asStatBlock(data.statBlock),
       lastLocation: location,
       hidden: data.hidden !== false,
+      dead: data.dead === true || undefined,
     };
   },
 };
+
+function asStatBlock(value: unknown): FaceEntry["statBlock"] {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
+  const source = value as Record<string, unknown>;
+  const string = (key: string) => typeof source[key] === "string" ? source[key] : "";
+  return { physique: string("physique"), agility: string("agility"), wits: string("wits"), empathy: string("empathy"), health: string("health"), mind: string("mind"), skills: string("skills") || undefined, talents: string("talents") || undefined, weapons: string("weapons") || undefined, equipment: string("equipment") || undefined };
+}
 
 export class FirestoreFacesRepository implements FacesRepository {
   private readonly ref: CollectionReference<FaceEntry>;
