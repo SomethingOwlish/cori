@@ -16,3 +16,4 @@ export * from "./ship";
 export * from "./concepts";
 export * from "./character";
 export * from "./generation";
+export * from "./faces";

@@ -19,6 +19,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Codex } from "./components/Codex";
+import { Faces } from "./components/Faces";
 import { Login } from "./components/Login";
 import { MasterDashboard } from "./components/MasterDashboard";
 import { PlayerHome } from "./components/PlayerHome";
@@ -30,12 +31,14 @@ import {
   FirestoreCampaignRepository,
   FirestoreCharacterRepository,
   FirestoreCodexRepository,
+  FirestoreFacesRepository,
   FirestoreShipRepository,
   FirestoreThirdHorizonRepository,
   getFirestoreDb,
   LocalStorageCampaignRepository,
   LocalStorageCharacterRepository,
   LocalStorageCodexRepository,
+  LocalStorageFacesRepository,
   LocalStorageShipRepository,
   LocalStorageThirdHorizonRepository,
   readFirebaseConfigFromEnv,
@@ -43,6 +46,7 @@ import {
   type CampaignRepository,
   type CharacterRepository,
   type CodexRepository,
+  type FacesRepository,
   type ShipRepository,
   type ThirdHorizonRepository,
 } from "./data";
@@ -53,6 +57,7 @@ interface Repositories {
   characters: CharacterRepository;
   campaigns: CampaignRepository;
   codex: CodexRepository;
+  faces: FacesRepository;
   thirdHorizon: ThirdHorizonRepository;
   ships: ShipRepository;
 }
@@ -81,6 +86,7 @@ function createRepositories(): Repositories {
       characters: new FirestoreCharacterRepository(db),
       campaigns: new FirestoreCampaignRepository(db),
       codex: new FirestoreCodexRepository(db),
+      faces: new FirestoreFacesRepository(db),
       thirdHorizon: new FirestoreThirdHorizonRepository(db),
       ships: new FirestoreShipRepository(db),
     };
@@ -94,6 +100,7 @@ function createRepositories(): Repositories {
       characters: new LocalStorageCharacterRepository(),
       campaigns: new LocalStorageCampaignRepository(),
       codex: new LocalStorageCodexRepository(),
+      faces: new LocalStorageFacesRepository(),
       thirdHorizon: new LocalStorageThirdHorizonRepository(),
       ships: new LocalStorageShipRepository(),
     };
@@ -101,11 +108,11 @@ function createRepositories(): Repositories {
 }
 
 /** Top-level destination once signed in. */
-type Page = "home" | "codex" | "atlas" | "ship";
+type Page = "home" | "codex" | "faces" | "atlas" | "ship";
 
 export function App() {
   // One repository instance each for the app's lifetime.
-  const { characters, campaigns, codex, thirdHorizon, ships } = useMemo(createRepositories, []);
+  const { characters, campaigns, codex, faces, thirdHorizon, ships } = useMemo(createRepositories, []);
   const firebaseEnabled = useMemo(isFirebaseConfigured, []);
 
   // Firestore's rules require an authenticated client. When Firebase is
@@ -270,6 +277,14 @@ export function App() {
                 </button>
                 <button
                   type="button"
+                  className={`app__nav-link${page === "faces" ? " app__nav-link--active" : ""}`}
+                  aria-current={page === "faces"}
+                  onClick={() => setPage("faces")}
+                >
+                  Лица
+                </button>
+                <button
+                  type="button"
                   className={`app__nav-link${page === "atlas" ? " app__nav-link--active" : ""}`}
                   aria-current={page === "atlas"}
                   onClick={() => setPage("atlas")}
@@ -311,6 +326,8 @@ export function App() {
         <>
           {page === "codex" ? (
             <Codex codex={codex} />
+          ) : page === "faces" ? (
+            <Faces repository={faces} atlas={thirdHorizon} role={session.role} />
           ) : page === "atlas" ? (
             <ThirdHorizonPage
               repository={thirdHorizon}
